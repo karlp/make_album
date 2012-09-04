@@ -522,6 +522,15 @@ foreach $file (@n_files) {
     }
 }
 doclose();
+select STDOUT;
+
+# Now, strip optimize all the jpegs...
+print "Stripping all jpgs in ${outdir}\n";
+my @stripfiles = glob "${outdir}/*.jpg";
+foreach my $sfile (@stripfiles) {
+    print "Stripping $sfile\n" if $verbose;
+    `jpegoptim --strip-all "$sfile"`;
+}
 
 
 ################# END ######################
