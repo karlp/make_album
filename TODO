@@ -1,0 +1,7 @@
+bugs:
+
+pod is out of date :(
+
+suffix stripping is dumb for movies
+
+should do a better job of not reencoding pngs? or magic strings to not resize?
