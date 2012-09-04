@@ -9,6 +9,7 @@ use strict;
 my $lib_dir;
 BEGIN { $lib_dir = "/home/karlp/src/make_album"; }
 use lib $lib_dir;
+use Carp;
 use PageGen;
 use Image::ExifTool; # ugly, seeing as pagegen already depends on it?
 use File::Copy;
@@ -486,7 +487,18 @@ foreach $file (@n_files) {
 
     print "\n<tr>" if (($loop == 0) && ($currrow == 0));
     print "\n<td>";
-    print "<a href=\"$pichtmldir/$basename.html\"><img src=\"thumbs/${thumb_prefix}_$basename.$thumb_format\" alt=\"$comment\"></a>";
+    my $thumb_fname = "$thumbdir/${thumb_prefix}_$basename.$thumb_format";
+    my $exif = Image::ExifTool::ImageInfo("$outdir/$thumb_fname");
+    if (my $error = $exif->{Error}) {
+        close PH;
+        croak "Can't parse $outdir/$thumb_fname : $error\n";
+    }
+    my $width = $exif->{ImageWidth};
+    my $height = $exif->{ImageHeight};
+
+    print "<a href=\"$pichtmldir/$basename.html\">";
+    print "<img src=\"${thumb_fname}\" alt=\"$comment\" ";
+    print "width=\"$width\" height=\"$height\"></a>";
     print "<p class=\"$css_caption_class\">$comment</p>";
     $picsleft--;
     $loop++;
