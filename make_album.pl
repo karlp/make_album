@@ -6,7 +6,9 @@
 
 use strict;
 #use lib "c:/bin";
-use lib "/home/karl/bin/make_album.dir";
+my $lib_dir;
+BEGIN { $lib_dir = "/home/karlp/src/make_album"; }
+use lib $lib_dir;
 use PageGen;
 use Image::ExifTool; # ugly, seeing as pagegen already depends on it?
 use File::Copy;
@@ -53,7 +55,7 @@ my $thumb_dimension = "250";
 my $web_full_to_tn_scale = "${thumb_dimension}x${thumb_dimension}>";
 my $non_pic_pattern = "avi|gif|mov|mp4|flv|ogv|mkv";  # move up to config when this works....
 my @imagesuffixes = qw/.jpg .png .tif/;
-my $videoOverlay = "/home/karl/bin/make_album.dir/overlayPlayIcon.png";
+my $videoOverlay = "$lib_dir/overlayPlayIcon.png";
 #my $videoOverlay = "/home/karl/bin/make_album.dir/video250.png";
 
 ## Config for the index pages
