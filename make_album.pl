@@ -555,7 +555,7 @@ sub make_web_full ($) {
         my $basename = basename($lcfile); # FIXME - strip off the suffix...
         my $ofile_mp4 = File::Spec->catfile($outdir, "${wf_prefix}_$basename.mp4");
         my $ofile_ogv = File::Spec->catfile($outdir, "${wf_prefix}_$basename.ogv");
-        `/home/karl/bin/make_web_videos.sh "$file" "$ofile_mp4" "$ofile_ogv"`;
+        `/home/karlp/bin/make_web_videos.sh "$file" "$ofile_mp4" "$ofile_ogv"`;
     } else {
     my $basename = basename($lcfile, @imagesuffixes);
     my $ofile = File::Spec->catfile($outdir, "${wf_prefix}_$basename.jpg");
