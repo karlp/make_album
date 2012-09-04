@@ -139,7 +139,16 @@ sub make_pic_page_inner() {
 
     print "\n<h2>$comment</h2>";
     my ($pic_basename, $path, $suffix) = fileparse($file);
-    print "\n<p><img src=\"../$pic_basename\" alt=\"$comment\"/></p>\n";
+
+    my $exif = Image::ExifTool::ImageInfo($file);
+    if (my $error = $exif->{Error}) {
+        close PH;
+        croak "Can't parse $file : $error\n";
+    }
+    my $width = $exif->{ImageWidth};
+    my $height = $exif->{ImageHeight};
+    print "\n<p><img src=\"../$pic_basename\" alt=\"$comment\"";
+    print " width=\"$width\" height=\"$height\" /></p>\n";
     if ($file =~ /pano/) {
         print_pano_details($file);
     } else {
