@@ -68,6 +68,7 @@ sub make_pic_page {
     my $prevfile = $opt{"prevfile"};
     my $nextfile = $opt{"nextfile"};
     my $style = $opt{"css"};
+    my $style2 = $opt{"css2"};
 
     # First off, make a webpage that displays the picture, we'll
     # HTML::Template this later I think
@@ -111,6 +112,7 @@ sub make_pic_page_inner() {
     my $prevfile = $opt{"prevfile"};
     my $nextfile = $opt{"nextfile"};
     my $style = $opt{"css"};
+    my $style2 = $opt{"css2"};
     my $page = $opt{"page"};
 
     my $comment = get_file_caption($file) || "No comment in file";
@@ -119,6 +121,7 @@ sub make_pic_page_inner() {
     print '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">';
     print "<head>";
     print "<link rel='StyleSheet' href='$style' type='text/css'/>";
+    print "<link rel='StyleSheet' href='$style2' type='text/css'/>";
     print "\n<title>$comment - Large View ($file)</title>\n";
 # Has some bugs in graciously playing with existing hot keys....
 #   print "\n<script type='text/javascript' src='http://code.jquery.com/jquery-1.4.2.min.js'></script>";
@@ -154,6 +157,7 @@ sub make_video_page() {
     my $prevfile = $opt{"prevfile"};
     my $nextfile = $opt{"nextfile"};
     my $style = $opt{"css"};
+    my $style2 = $opt{"css2"};
     my $page = $opt{"page"};
 
 
@@ -184,6 +188,7 @@ sub make_video_page() {
     print "<html>";
     print "<head>";
     print "<link rel=\"StyleSheet\" href=\"$style\" type=\"text/css\"/>";
+    print "<link rel=\"StyleSheet\" href=\"$style2\" type=\"text/css\"/>";
     print "\n<title>$comment - Large View ($file)</title>\n";
     print "</head><body>\n";
 

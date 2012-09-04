@@ -28,7 +28,8 @@ my $text_colour = "orange";
 my $font = "c:/bin/arial.ttf";
 my $fontsize = 16;
 my $quality = 60;
-my $stylesheet = "/tweak.css";
+my $stylesheet = "/tweak2.css";
+my $stylesheet2 = "/colour-tweak.css";
 my $report_file = "tripreport.txt";  # default for karl!
 my $config_file = "gallery.metadata";
 #use the defaults in PageGen.pm
@@ -147,6 +148,7 @@ GetOptions(
     'reverse' => sub {$reverse_order = 1},
     'rows=i' => \$rowsperpage,
     'stylesheet|style|css=s' => \$stylesheet,
+    'stylesheet2|style2|css2=s' => \$stylesheet2,
     'text_colour|text_color|colour|color=s' => \$text_colour,
     'thumb_dir=s' => \$thumbdir,
     'thumb_format=s' => \$thumb_format,
@@ -376,6 +378,7 @@ foreach $file (@n_files) {
         prevfile => $prevfile, 
         nextfile => $nextfile,
         css => $stylesheet,
+        css2 => $stylesheet2,
         creativeCommons => $creativeCommons,
         creativeCommonsTitle => $creativeCommonsTitle,
         creativeCommonsName => $creativeCommonsName,
@@ -429,6 +432,7 @@ sub doheader () {
     print "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n";
     print "<html>";
     print "<head>\n";
+    print "<link rel=\"StyleSheet\" href=\"$stylesheet2\" type=\"text/css\">\n";
     print "<link rel=\"StyleSheet\" href=\"$stylesheet\" type=\"text/css\">\n";
     $page_title =~ s/&/&amp;/g;
     print "<title>$page_title</title>\n";
@@ -779,10 +783,15 @@ need be.
 
 Number of rows per page to use when generating the index pages.
 
-=item B<--stylesheet --style --css> I<(default /tweak.css)>
+=item B<--stylesheet --style --css> I<(default /tweak2.css)>
 
 Specify a complete relative link to a stylesheet you want, this is used for
 both the per picture pages, and the thumbnail pages
+
+=item B<--stylesheet2 --style2 --css2> I<(default /colour-tweak.css)>
+
+Specify a complete relative link to a second stylesheet you want,
+normally, you would use this for colours maybe?
 
 =item B<--text_colour --text_color --colour --color colourname> I<(default orange)>
 
