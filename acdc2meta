@@ -1,0 +1,41 @@
+#!/usr/bin/perl -w
+# Karl Palsson, 2007
+# A tool to convert acdsee descript.ion files into iptc Caption-Abstract tags
+# why?  because qiv inside fullscreen vnc isn't as fast as ctrl-d to describe
+# on acdsee, but because acdsee unfortunately doesn't support plugins very
+# well
+
+# BUGS:  if the caption has something like
+#   this is a long caption. "it contains a 'quote'"
+# this will break.  I've hit it once, and I edited the caption :|
+
+use MSDOS::Descript;
+
+my $ifile = "descript.ion";
+# windows creates files in ISO_8859-1, even though it can edit UTF8
+# don't run this twice!!!!!
+`iconv -f ISO_8859-1 -t UTF-8 $ifile > $ifile.$$`;
+
+#my $d = new MSDOS::Descript; # by default it looks for DESCRIPT.ION
+my $d = new MSDOS::Descript("$ifile.$$");
+
+my @flist;
+(@flist = @ARGV) || die ("you probably meant to specify some files to work with");
+foreach my $file (@flist) {
+    print "\nworking with $file, ";
+    my $ccapt = $d->description($file);
+    # ccapt is probably in 8859-1 :(
+    next unless $ccapt;
+    next if $ccapt =~ /^xx/;  # I use xxxxx and xxx to quickly tag images that need further review.
+    print "adding $ccapt\n";
+#    if ($file =~ /(\.mov$|\.mp4$)/i) {
+#        `mp4tags -c "$ccapt" -G "Publish" "$file"`; 
+#    } elsif ($file =~ /\.ogv$/) {
+#        `oggz-comment "$file" "TITLE=$ccapt" -o "$file.$$"`;
+#        `mv "$file.$$" "$file"`;
+#    } else {
+        `exiftool -Caption-Abstract="$ccapt" -Urgency="2" "$file"`;
+#    }
+}
+`rm $ifile.$$`;
+print "\n";

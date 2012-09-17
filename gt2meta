@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+# Karl Palsson, July 2010
+# convert gthumb 2.11.x metadata to exif metadata
+# based on the gt2meta tool for gthumb 2.10.x
+# Note: gthumb 2.11.x writes the "description" field from the 
+# metadata tool (ctrl-m) into exif:UserComment, XMP:Description
+# and IPTC:Headline.  (If you let it)
+# Because it writes IPTC:Headline, IPTC:Urgency gets set to zero automatically.
+# so, for this tool, we don't need to do much, we just want to 
+# exclude xx tagged pictures, and set the xmp rating.
+# However, this seems to trash or duplicate some of the maker notes, so
+# instead, block gthumb from saving metadata into the file, and just use the
+# xml comments file.  Then, this script will put it into the right places...
+
+use XML::XPath;
+use XML::XPath::XMLParser;
+use Image::ExifTool;
+use Encode;
+use MSDOS::Descript;
+    
+my @flist;
+(@flist = @ARGV) || die ("you probably meant to specify some files to work with");
+
+foreach my $file (@flist) {
+
+	print "Processing $file : ";
+	unless (open( MYFILE, ".comments/$file.xml" )) {
+		print "Skipping, no gthumb comments found\n";
+		next;
+	}
+	
+	my $xp = XML::XPath->new(ioref => *MYFILE{IO});
+	my $comment = $xp->findvalue('/comment/note');
+        # gthumb writes xml entities, and for some reason, these get converted into latin1, not utf8 at xpath time?!
+        # at least gthumb11 doesn't have zipped xml files with .xml extensions, but it still has this utf8 decl vs 8859-1
+        # reality insanity.
+        $comment = Encode::decode('iso-8859-1', $comment);
+	# TODO - should probably use nodesets for keywords?
+
+	my $doCaption = 1;
+	$doCaption = 0 if $comment =~ /^xx/;  # I use xxxxx and xxx to quickly tag images that need further review.
+        $doCaption = 0 if ! $comment;
+
+        my $isMovie = $file =~ /avi|gif|mov|mp4|flv|ogv|mkv/i;
+
+        if ($doCaption && $isMovie) {
+            print "proceeding w/ movie...";
+            # need to make a descript.ion file so that make_album can use it
+            # need to add to it if it already exists, and make sure to only
+            # write 8859-1
+            my $desFile = new MSDOS::Descript("descript.ion");
+            $desFile->description($file, $comment);
+            $desFile->update();
+            if ($file =~ /\.mkv$/) {
+                print "proceeding w/ matroska!";
+                `mkvpropedit -e info -s title="$comment" "$file"`;
+            }
+        } elsif ($doCaption) {
+                my $et = new Image::ExifTool; # make this as late as possible
+                print "proceeding w/ image...";
+                $et->SetNewValue('Caption-Abstract', $comment);
+                $et->SetNewValue('XMP-dc:Title-x-default', $comment);
+                #print $et->SetNewValue('IPTC:Urgency', 2);
+                #print $et->SetNewValue('XMP:Urgency', 2);
+                $et->SetNewValue('XMP:Rating', 2);
+                $et->WriteInfo($file);
+        }
+	print "\n";
+
+}
+

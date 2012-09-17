@@ -1,0 +1,671 @@
+#!/usr/bin/perl -w
+# Copyright © 2005 Jamie Zawinski <jwz@jwz.org>
+#
+# Permission to use, copy, modify, distribute, and sell this software and its
+# documentation for any purpose is hereby granted without fee, provided that
+# the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation.  No representations are made about the suitability of this
+# software for any purpose.  It is provided "as is" without express or 
+# implied warranty.
+#
+##############################################################################
+#
+# This script is how I get pictures off my digital camera.
+#
+#   - examine all the files on the card and decide what directory
+#     each file will go in:
+#
+#     - divide them into directories based on date like "YYYY-MM-DD".
+#     - continuously shooting around midnight does not cause a new
+#       directory: shots after midnight count as the previous day.
+#     - start a new directory any time there is more than 30 minutes
+#       pause between shots (suffix "b", "c", etc.)
+#
+#   - create directories like YYYY-MM-DD/RAW/
+#   - create directories like YYYY-MM-DD/EDIT/
+#
+#   - for each image on the card:
+#
+#       - mv it into YYYY-MM-DD/RAW/
+#       - if it is a CRW (raw) file, convert it to JPEG
+#       - rotate it according to EXIF
+#       - add a copyright notice to the file
+#       - set file time to the time photo was taken
+#       - chmod a-w
+#       - copy that into YYYY-MM-DD/EDIT/
+#       - chmod u+w the copy
+#
+# Then I manually crop and color-correct the files in EDIT, and delete
+# the ones that I don't want.
+#
+# To publish photos to the web, I then scale down the versions from EDIT
+# and do any late edits (unsharp mask, etc.)
+#
+# This way, I end up with archives of the original, unaltered images,
+# as well as the large color-corrected versions, so that I can re-create
+# different-sized web galleries without having to re-do the various edits.
+#
+# When archiving, I add a topical suffix to the directory name, e.g.,
+# "2005-03-25-beach".  That way, things in the archive always sort
+# chronologically, but it's still easy to find events by title.
+#
+##############################################################################
+#
+# Requirements:
+#
+#   Image::ExifTool  -- for reading JPEG EXIF data (photo date, rotation, etc.)
+#   copyright-image  -- for putting a copyright notice in each JPEG file.
+#                       (http://www.jwz.org/hacks/marginal.html)
+#
+# Required only if you shoot CRW (raw) images:
+#
+#   dcraw            -- for reading RAW files...
+#   cjpeg            -- ...and writing them as JPEG files.
+#
+# Created: 16-Mar-2005.
+#
+##############################################################################
+
+require 5;
+use diagnostics;
+use strict;
+use POSIX qw(mktime);
+use Image::ExifTool;
+use File::Find;
+use File::Path qw(mkpath);
+use File::Basename;
+
+my $progname = $0; $progname =~ s@.*/@@g;
+my $version = q{ $Revision: 1.3 $ }; $version =~ s/^[^0-9]+([0-9.]+).*$/$1/;
+
+
+my $mountpoint = "/media/EOS_DIGITAL";    # where your camera shows up
+#my $mountpoint = "/home/karl/tempimport";    # where your camera shows up
+#my $mountpoint = "/media/HDD/karl/photos";    # where your camera shows up
+
+# My new computer can watch the raw camera videos as is.
+# my old laptop needed a cutrez preview made.
+my $enable_convert_movie = 0;
+my $config_rawPattern = '.cr2$|.crw$|.CR2$|.CRW$';
+my @config_raw_suffixes = qw(.cr2 .crw .CR2 .CRW);
+
+
+my $verbose = 1;
+my $copy_p = 1;
+
+my $destdir  = "RAW";
+my $clonedir = "EDIT";
+
+my $FILEWRITETIME = 1; # Use the file write time to decide output directory
+my $EXIFCREATE = 2;    # use the exif createDate to decide output directory
+# You'll need to use exifcreate if you're importing from somewhere other than 
+# the original flashcard, but it's _really_ slow to use that on a mounted card
+#my $datetime_source = $EXIFCREATE;
+my $datetime_source = $FILEWRITETIME;
+
+
+# like system() but checks errors.
+#
+sub safe_system {
+  my (@cmd) = @_;
+
+  print STDOUT "$progname: executing " . join(' ', @cmd) . "\n"
+    if ($verbose > 3);
+
+  system @cmd;
+  my $exit_value  = $? >> 8;
+  my $signal_num  = $? & 127;
+  my $dumped_core = $? & 128;
+  error ("$cmd[0]: core dumped!") if ($dumped_core);
+  error ("$cmd[0]: signal $signal_num!") if ($signal_num);
+  error ("$cmd[0]: exited with $exit_value!") if ($exit_value);
+}
+
+# returns the full path of the named program, or undef.
+#
+sub which {
+  my ($prog) = @_;
+  foreach (split (/:/, $ENV{PATH})) {
+    if (-x "$_/$prog") {
+      return $prog;
+    }
+  }
+  return undef;
+}
+
+
+my %files = ();   # "yyyy/mm/dd hh:mm:ss filename" => "target-dir"
+my %dirs = ();    # all the parent directories we will create
+
+
+# Look at the write dates on all the files on the card, and populate
+# the keys in %files.
+#
+sub analyse_files {
+  my (@files) = @_;
+
+  my $last_time = time;
+  my $last_pct = -1;
+  my $i = 0;
+
+  print STDOUT "\n$progname: examining files in $mountpoint/\n"
+    if ($verbose);
+
+  my $exiftool = new Image::ExifTool;
+  $exiftool->Options(DateFormat => '%s');  # exif time in seconds from epoch, for compat with filetime
+  foreach my $file (@files) {
+    my $mtime;
+    if ($datetime_source == $FILEWRITETIME) {
+        $mtime = (stat($file))[9];
+    } elsif ($datetime_source == $EXIFCREATE) {
+        $exiftool->ImageInfo ($file, "CreateDate");
+        $mtime = $exiftool->GetValue("CreateDate");
+    } else {
+	error("Unknown file date time source!");
+    }
+    error ("$file: unstattable?") unless ($mtime > 100000);
+    my ($ss, $min, $hh, $dd, $mm, $yyyy) = localtime($mtime);
+    $mm++;
+    $yyyy += 1900;
+
+    my $now = time;
+    if ($now >= $last_time + 5) {
+      my $pct = int ($i * 100 / ($#files+1));
+      if ($pct != $last_pct) {
+        print STDOUT sprintf("%4d/%d -- %d%%...\n", $i, $#files+1, $pct);
+        $last_pct = $pct;
+        $last_time = $now;
+      }
+    }
+
+    my $key = sprintf("%04d/%02d/%02d %02d:%02d:%02d %s",
+                      $yyyy, $mm, $dd, $hh, $min, $ss, $file);
+    $files{$key} = 1;
+    $i++;
+  }
+}
+
+
+# Decide which directory each file should go in, being smart about
+# midnight and pauses in shooting.  Fill in the values in %files.
+#
+sub choose_directories {
+
+  my $last_time = 0;
+  my $last_dir = undef;
+
+  my @keys = sort (keys %files);
+
+  print STDOUT "\n$progname: choosing directories for " . ($#keys+1) .
+               " files...\n"
+    if ($verbose > 1);
+
+  foreach my $key (@keys) {
+    $_ = $key;
+
+    my ($date, $yyyy, $mm, $dd, $hh, $min, $ss, $file) =
+      m@^((\d{4})/(\d\d)/(\d\d) (\d\d):(\d\d):(\d\d)) (.*)$@s;
+    error ("unparsable key: $_") unless (defined($yyyy) && $yyyy > 1990);
+
+    my $time = mktime ($ss, $min, $hh, $dd, $mm-1, $yyyy-1900, 0, 0, -1);
+    error ("bogus values in mktime") unless ($time);
+
+    my $elapsed = $time - $last_time;
+
+    $file =~ s@^(.*/)?([^/]*)$@$2@s;
+
+    my $dir = $last_dir;
+
+    # Switch to a new directory if:
+    #
+    #  - this is the first file;
+    #  - more than 3 hours has elapsed between shots.
+    # That is, we don't switch just because we crossed midnight.
+    #
+    # Switch to a new suffix if more than 30 minutes elapsed between shots.
+    #
+    if (!defined($dir) || $elapsed > 3*60*60) {
+      $dir = "${yyyy}_${mm}_${dd}";
+    }
+    # Don't like this.  I like not making new directories when we shoot over
+    # midnight, but during the day, I want one directory.
+    # I might move it back at some point, only with more than 30 minutes.
+    # maybe 2 hours?
+    # elsif ($last_time > 0 && $elapsed >= 30*60) {
+    # $dir =~ m/^(.*-)([a-z])$/ || error ("no suffix on $dir?");
+    #  my ($prefix, $suffix) = ($1, $2);
+    #  $dir = $prefix . chr(ord($suffix)+1);
+    #}
+
+    if ($last_dir && $dir ne $last_dir) {
+      my $e = ($elapsed <= 60*60    ? sprintf("%02d minutes", $elapsed/60) :
+               $elapsed <  72*60*60 ? sprintf("%2d hours %02d minutes",
+                                              $elapsed/(60*60),
+                                              ($elapsed/60)%60) :
+               sprintf("%.1f days", $elapsed/(24*60*60)));
+      print STDOUT "\n$progname: ## -------- $e\n\n"
+        if ($verbose > 5);
+    }
+
+    print "$progname: ## $dir\t$file\t# $date $elapsed\n"
+      if ($verbose > 5);
+
+    $last_time   = $time;
+    $last_dir    = $dir;
+
+    if ($file =~ /$config_rawPattern/) {
+        $dir = "$dir/raws";
+    }
+    $dirs{$dir}  = 1;
+    $files{$key} = $dir;
+  }
+}
+
+
+# Create each top-level directory we will be writing to in %dirs.
+#
+sub create_directories {
+  foreach my $d (sort (keys %dirs)) {
+    if (! -d $d) {
+      print STDOUT "$progname: mkdir $d/\n";
+      mkpath ($d) || error ("mkdir: $d: $!");
+    }
+  }
+  print STDOUT "\n";
+}
+
+
+# Print some stats about time elapsed, etc.
+#
+sub print_stats {
+  my ($action, $start_this, $start_total, $bytes, $files) = @_;
+
+  return unless $verbose;
+
+  my $secs  = time - $start_total;
+  my $secs2 = time - $start_this;
+
+  $secs  = 1 if ($secs  < 1);
+  $secs2 = 1 if ($secs2 < 1);
+
+  my $dur = sprintf("%d:%02d:%02d",
+                    $secs / (60 * 60),
+                    ($secs / 60) % 60,
+                    $secs % 60);
+  my $dur2 = sprintf("%d:%02d:%02d",
+                     $secs2 / (60 * 60),
+                     ($secs2 / 60) % 60,
+                     $secs2 % 60);
+
+  my $pre = "$progname: $action   $files files in $dur2";
+  my $k = ($bytes / $secs2) / 1024.0;
+  my $bb = ($k >= 1024
+            ? sprintf ("%.1f GB/s", $k/1024.0)
+            : sprintf ("%.1f KB/s", $k));
+
+  if ($bytes && $start_this != $start_total) {
+    print STDOUT "$pre ($dur total, $bb)\n";
+  } elsif ($start_this != $start_total) {
+    print STDOUT "$pre ($dur total)\n";
+  } elsif ($bytes) {
+    print STDOUT "$pre ($bb)\n";
+  } else {
+    print STDOUT "$pre\n";
+  }
+  print "\n";
+}
+
+
+# Actually move (or copy) the files off the card.
+#
+sub move_files {
+
+  my @keys = sort (keys %files);
+
+  my $start = time;
+  my $bytes = 0;
+  my $i = 1;
+
+  my @nfiles = ();
+
+  foreach my $key (@keys) {
+    my $dir = $files{$key};
+    my $ofile = $key;
+    $ofile =~ s@^[\d/]+ [\d:]+ @@s;
+    my $nfile = lc($ofile);
+    $nfile =~ s@^.*/@@s;
+    my $sfile = $nfile;
+    my $exiftool = new Image::ExifTool;
+    $exiftool->ImageInfo ($ofile, "CreateDate");
+    my $datetime = $exiftool->GetValue("CreateDate", 'ValueConv');
+    $datetime =~ s/:/_/g;
+    $datetime =~ s/\ /-/g;
+    $nfile = "$dir/$datetime--$nfile";
+
+    my $size = (stat($ofile))[7];
+    my $k = int (($size / 1024.0) + 0.5);
+    my $n = $#keys+1;
+
+    print STDOUT sprintf("%s: %s %3d/%d %s... (%d KB)\n",
+                         $progname, ($copy_p ? "copying" : "moving"),
+                         $i, $n, $sfile, $k)
+      if ($verbose);
+
+    if ($copy_p) {
+      safe_system ("cp", "-p", $ofile, $nfile);
+      safe_system ("chmod", "644", $nfile);
+    } else {
+      safe_system ("mv",       $ofile, $nfile);
+
+      if ($ofile =~ m/^(.*)\.crw$/i) {
+        #
+        # When Canon writes crw_NNNN.crw RAW files, they also write a
+        # small JPEG thumbnail in crw_NNNN.thm.  If we're moving the
+        # .crw file off the card (not just copying), then delete the
+        # .thm file as well.
+        #
+        my $thm = "$1.thm";
+        unlink ($thm);
+      }
+    }
+
+    push @nfiles, $nfile;
+
+    $bytes += $size;
+    $i++;
+  }
+
+  print_stats (($copy_p ? "copied " : "moved"),
+               $start, $start, $bytes, $#nfiles+1);
+  return @nfiles;
+}
+
+# perf sucks because we look through the list each time, but it's nothing compared to the 
+# io costs of this whole shebang.
+# FIXME - this doesn't actually work properly....
+sub isJpegPlusRaw {
+    my ($rawFile, @allFiles) = @_;
+    my ($name, $path, $suffix) = fileparse($rawFile, @config_raw_suffixes);
+    my $jpg = $path . $name . ".JPG";
+    print STDOUT "searching for $jpg\n";
+    foreach my $f (@allFiles) {
+        if ($f =~ m/$jpg/i) {
+            print STDOUT "Found a match: $f == $rawFile\n";
+            return 1;
+        }
+    }
+    print STDOUT "No corresponding jpg found for $rawFile\n";
+    return 0;
+}
+
+
+# Rotate images in RAW/ according to EXIF data; add a copyright notice;
+# make the files unwritable.
+#
+sub adjust_images {
+  my ($start, @nfiles) = @_;
+
+  my $start2 = time;
+  my $i = 1;
+
+  foreach my $f1 (@nfiles) {
+    my $f2;
+    my $sfile = $f1;
+    $sfile =~ s@^.*/@@;
+    my $n = $#nfiles+1;
+    #my $extract_p = ($sfile =~ m/\.crw$/i);
+    my $convert_movie = ($sfile =~ m/.mov$/i) && $enable_convert_movie;
+    my $israw = ($sfile =~ m/\.crw$/i) || ($sfile =~ m/\.cr2$/i);
+    my $extract_p = $israw && not isJpegPlusRaw($f1, @nfiles);
+
+
+    if ($extract_p) {
+      $f2 = $f1;
+      $f2 =~ s/$config_rawPattern/_JFR.jpg/i;
+      $f2 =~ s!/raws/!/!;
+      if (-e $f2) {
+          # whoah! don't trample anything!
+          my $inc = 2;
+          do {
+              $f2 =~ s/_JFR.*.jpg/_JFR_$inc.jpg/i;
+              $inc++;
+          } while (-e $f2)
+      }
+      safe_system ("exiftool -b -JpgFromRaw '$f1' > '$f2'");
+      if ( -z $f2 ) {
+        safe_system("exiftool -b -PreviewImage '$f1' > '$f2'");
+      }
+      copy_exif_data ($f1, $f2);
+      rotate_jpeg ($f2);
+      update_file_date($f2);
+
+      # From here on, we work on the .jpg file, not the .crw file.
+      ($f1, $f2) = ($f2, $f1);
+    }
+
+    if ($convert_movie) {
+        $f2 = $f1;
+        $f2 =~s/\.mov$/_preview.ogv/i;
+        safe_system("/home/karl/bin/make_ogv.sh $f1 $f2");
+        # add meta data to the movie?
+    }
+
+
+    if ($israw) {
+        print STDOUT sprintf("%s: %s %3d/%d %s...\n", $progname, "doing nothing with raw", $i, $n, $sfile) if ($verbose);
+	
+    } else {
+        print STDOUT sprintf("%s: %s %3d/%d %s...\n", $progname, "rotating jpeg", $i, $n, $sfile) if ($verbose);
+        rotate_jpeg ($f1);
+        update_file_date($f1);
+    }
+    $i++;
+  }
+  print_stats ("extracted/converted", $start2, $start, 0, $#nfiles+1);
+
+}
+
+
+# Returns an "Image::ExifTool" from the given file, with error checking.
+#
+sub read_exif {
+  my ($file) = @_;
+
+  my $exif = new Image::ExifTool;
+  $exif->Options (Binary    => 1,
+                  Verbose   => ($verbose > 4));
+  my $info = $exif->ImageInfo ($file);
+
+  if (($_ = $exif->GetValue('Error'))) {
+    error ("$file: EXIF read error: $_");
+  }
+
+  if (($_ = $exif->GetValue('Warning'))) {
+    print STDERR "$progname: $file: EXIF warning: $_\n";
+    delete $info->{Warning};
+  }
+
+  return $exif;
+}
+
+
+# Copies the EXIF info from one file into another.
+#
+sub copy_exif_data {
+    my ($from, $to) = @_;
+    safe_system("exiftool", "-overwrite_original", "-tagsFromFile", $from, $to);
+}
+
+
+# If the EXIF data says the file needs to be rotated, do so.
+#
+# This is basically "exifautotran" rewritten/prewritten by jwz
+sub rotate_jpeg {
+  my ($file) = @_;
+
+  my $exif = read_exif ($file);
+  my $rot = $exif->GetValue ('Orientation', 'ValueConv');
+
+  return if (not defined ($rot));
+  return if ($rot == 1);  # don't need to do anything
+
+  my $tmp1 = sprintf ("%s.1.%08X", $file, int (rand(0xFFFFFF)));
+  my $tmp2 = sprintf ("%s.2.%08X", $file, int (rand(0xFFFFFF)));
+
+  my @rotcmd = ("jpegtran", "-copy", "all", "-trim");
+
+  if    ($rot == 2) { push @rotcmd, ("-flip", "horizontal"); }
+  elsif ($rot == 3) { push @rotcmd, ("-rotate", "180"); }
+  elsif ($rot == 4) { push @rotcmd, ("-flip", "vertical"); }
+  elsif ($rot == 5) { push @rotcmd, ("-transpose"); }
+  elsif ($rot == 6) { push @rotcmd, ("-rotate", "90"); }
+  elsif ($rot == 7) { push @rotcmd, ("-transverse"); }
+  elsif ($rot == 8) { push @rotcmd, ("-rotate", "270"); }
+  else {
+    error ("$file: unknown Orientation value: $rot");
+  }
+
+  push @rotcmd, ("-outfile", $tmp1, $file);
+
+  # Copy the JPEG data from $file to $tmp1, losslessly rotating it.
+  #
+  print STDERR "$progname: $tmp1: rotating...\n" if ($verbose > 3);
+  safe_system (@rotcmd);
+
+  # Update the EXIF data with the new orientation, and copy $tmp1 to $tmp2
+  # with the new EXIF.  There's no way to do this in one pass.
+  #
+  my ($status, $err) = $exif->SetNewValue ('Orientation', 1,
+                                           Type => 'ValueConv');
+  if ($status <= 0 || $err) {
+    error ("$tmp2: EXIF Orientation: $status: $err");
+  }
+
+  print STDERR "$progname: $tmp2: updating EXIF...\n" if ($verbose > 3);
+  if (! $exif->WriteInfo ($tmp1, $tmp2)) {
+    error ("$tmp2: EXIF write error: " . $exif->GetValue('Error'));
+  }
+
+  # Finally, replace $file with $tmp2.
+  #
+  unlink $tmp1;
+  if (!rename ($tmp2, $file)) {
+    unlink ($tmp2);
+    error ("mv $tmp2 $file: $!");
+  }
+}
+
+
+# Set the write date of the file to be the date the photo was taken.
+# If a second file is specified, set its date the same.
+#
+sub update_file_date {
+  my ($file, $file2) = @_;
+
+  my $exif = read_exif ($file);
+  my $date = $exif->GetValue('DateTimeOriginal') || $exif->GetValue('TrackCreateDate');
+
+  my ($yyyy, $mon, $dotm, $hh, $mm, $ss) = split (/[: ]+/, $date);
+  error ("$file: unparsable date: \"$date\"\n")
+    unless ($yyyy > 1990 && $dotm > 0);
+
+  $date = mktime ($ss, $mm, $hh, $dotm, $mon-1, $yyyy-1900, 0, 0, -1);
+  error ("bogus values in mktime") unless ($date);
+
+  print STDERR "$progname: $file: setting date to $date\n"
+    if ($verbose > 3);
+
+  utime (time, $date, $file) || error ("changing date of $file: $!");
+
+  if (defined ($file2)) {
+    print STDERR "$progname: $file2: setting date to $date\n"
+      if ($verbose > 3);
+    utime (time, $date, $file2) || error ("changing date of $file2: $!");
+  }
+}
+
+
+# Copy the RAW/ files to EDIT; make those files writable.
+#
+sub duplicate_files {
+  my ($start, @nfiles) = @_;
+
+  my $bytes = 0;
+  my $start2 = time;
+  my $i = 1;
+  foreach my $f1 (@nfiles) {
+    $f1 =~ s/\.crw$/_JFR.jpg/i;
+    my $f2 = $f1;
+    $f2 =~ s@/$destdir/@/$clonedir/@;
+    error ("unable to map $destdir to $clonedir in $f1") if ($f1 eq $f2);
+
+    my $sfile = $f1;
+    $sfile =~ s@^.*/@@;
+
+    my $n = $#nfiles+1;
+    my $size = (stat($f1))[7];
+    my $k = int (($size / 1024.0) + 0.5);
+    print STDOUT sprintf("%s: duplicating %3d/%d %s... (%d KB)\n",
+                         $progname, $i, $n, $sfile, $k)
+      if ($verbose);
+    safe_system ("cp", "-p", $f1, $f2);
+    safe_system ("chmod", "644", $f2);
+    $bytes += $size;
+    $i++;
+  }
+  
+  print_stats ("duplicated", $start2, $start, $bytes, $#nfiles+1);
+}
+
+my @foundfiles; ## Shouldn't have to be a global :(
+sub wanted {
+    return unless ($_ =~ m/\.jpg$|\.cr[w2]$|\.mov$/i);
+    push @foundfiles, $File::Find::name;
+}
+
+
+sub mvpix {
+
+  my $start = time;
+
+    File::Find::find(\&wanted, $mountpoint);
+
+  my @ofiles = @foundfiles;
+  error ("no files in $mountpoint/") if ($#ofiles == -1);
+
+  analyse_files (@ofiles);
+  choose_directories ();
+  create_directories ();
+
+  my @nfiles = move_files ();
+
+  adjust_images ($start, @nfiles);
+}
+
+
+
+sub error {
+  my ($err) = @_;
+  print STDERR "$progname: $err\n";
+  exit 1;
+}
+
+sub main {
+  my $src = $ARGV[0];
+  if ($src) {
+      if ((-d $src) and (-r $src)) {
+          $mountpoint = $src;
+      } else {
+          error("$src isn't a directory I can read from!");
+      }
+      my $junk = shift @ARGV;
+  } else {
+      #nothing. use the default mountpoint
+  }
+
+  mvpix ();
+}
+
+main;
+exit 0;

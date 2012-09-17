@@ -1,0 +1,38 @@
+#!/usr/bin/perl -w
+# This takes a given image file, and tries to automagically determine the right "misc" gallery to
+# publish the file to.
+# This is in conjunction with the grand unification of the misc pics with the main pics, in fixed month
+# by month "misc" galleries.
+
+
+use Image::ExifTool;
+
+
+# user config....
+my $gallery_base_path = "/home/www/site/pics2";
+my $gallery_monthly_name = "miscstream"; 
+my $verbose = 1;
+
+my $et = new Image::ExifTool;
+# 2007/July etc
+$et->Options(DateFormat => "%Y/%B");
+
+my $outdir;
+foreach my $file (@ARGV) {
+    unless (-e $file) {
+        printf STDERR "$file doesn't exist, skipping\n";
+        next;
+    }
+    my $info = $et->ImageInfo($file);
+    print "error = " . $$info{'Error'} . "\n" if defined ($$info{'Error'}); 
+    my $gallery_dir = $$info{"DateTimeOriginal"} || $$info{"FileModifyDate"} || die "No date in the file: $file!";
+    $outdir = $gallery_base_path . "/" . $gallery_dir . "/" . $gallery_monthly_name;
+    printf "publishing $file to  $outdir\n" if $verbose;
+    print `perl /home/karlp/bin/make_album -outdir $outdir $file  --verbose;`; 
+
+    my ($year, $month_name) = split(/\//, $gallery_dir);
+    my $title = "Miscellaneous pictures from $month_name";
+    print `cd $outdir && perl /home/karlp/bin/make_album --outdir . --rows=4 --htmlonly *.jpg *.ogv -title "$title" --reverse;`;
+}
+
+
