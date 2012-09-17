@@ -490,7 +490,6 @@ foreach $file (@n_files) {
     my $thumb_fname = "$thumbdir/${thumb_prefix}_$basename.$thumb_format";
     my $exif = Image::ExifTool::ImageInfo("$outdir/$thumb_fname");
     if (my $error = $exif->{Error}) {
-        close PH;
         croak "Can't parse $outdir/$thumb_fname : $error\n";
     }
     my $width = $exif->{ImageWidth};
