@@ -206,13 +206,14 @@ sub make_file_list {
     my @rval;
     if (defined $listfile && -f $listfile && -r $listfile) {
         # treat it as gospel, read it, and get real paths out of it somehow...
+        my ($volume,$root,$file) = File::Spec->splitpath($listfile);
         open(LF, $listfile) or die $!;
         while (<LF>) {
             chomp;
             my $proposed = $_;
             next unless $proposed;
             #print("looking for file with basename: $proposed\n") if $verbose;
-            my @gr = glob("$proposed */$proposed */*/$proposed");
+            my @gr = glob("$proposed $root/*/$proposed $root/*/*/$proposed");
             push @rval, grep(-f, @gr);
         }
         close(LF);
