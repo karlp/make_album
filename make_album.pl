@@ -248,6 +248,7 @@ my @real_pic_files = grep(!/$non_pic_pattern/i, @files);
 # importance
 
 my %sideCaptions;
+my %resolvedCaptions;
 
 #ripped from acdc2meta
 use MSDOS::Descript;
@@ -340,13 +341,26 @@ if ($reverse_order) {
 # is used to determine how many gallery pages there are.
 my $fcount = @files;
 
+# resolve once and for all the caption, and save it in a hash based on original file
+foreach my $file (@files) {
+    my $comment = get_file_caption($file) 
+                || get_file_caption("$file.ogv")
+                || $sideCaptions{$file} 
+                || "no comment in file";
+    $resolvedCaptions{$file} = $comment;
+}
+
 # @files is the actual files we use as input, @n_files is the output files
 my @n_files;
+my %filename_map; # Input vs output filenames
 foreach my $n_file (@files) {
     my ($fn, $dir, $suffix) = fileparse($n_file, @imagesuffixes);
     $fn = lc($fn);
     my $tmp_file = File::Spec->catfile($outdir, "${wf_prefix}_${fn}$suffix");
     push @n_files, $tmp_file;
+    # Establish two way mapping of in/out filenames
+    $filename_map{$n_file} = $tmp_file;
+    $filename_map{$tmp_file} = $n_file;
 }
 
 # If we just want the html regenned, we leave the filenames intact, and just
@@ -414,7 +428,8 @@ foreach $file (@n_files) {
         creativeCommonsTitle => $creativeCommonsTitle,
         creativeCommonsName => $creativeCommonsName,
         creativeCommonsEmail => $creativeCommonsEmail,
-        comment => $sideCaptions{$files[$loop - 1]}
+        comment => $resolvedCaptions{$filename_map{$file}},
+        file_source => $filename_map{$file}
     );
     make_pic_page($file, \%options);
     $loop++;
@@ -508,10 +523,7 @@ foreach $file (@n_files) {
     my $basename = basename($file, @imagesuffixes);
     $basename = basename($basename, ".ogv");
 
-    my $comment = get_file_caption($file) 
-                || get_file_caption("$file.ogv")
-                || $sideCaptions{$files[$loop]} 
-                || "no comment in file";
+    my $comment = $resolvedCaptions{$filename_map{$file}};
 
     print "\n<tr>" if (($loop == 0) && ($currrow == 0));
     print "\n<td>";

@@ -114,8 +114,9 @@ sub make_pic_page_inner() {
     my $style = $opt{"css"};
     my $style2 = $opt{"css2"};
     my $page = $opt{"page"};
+    my $file_source = $opt{"file_source"};
 
-    my $comment = get_file_caption($file) || "No comment in file";
+    my $comment = $opt{"comment"} || "No comment in file";
     print '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
             "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
     print '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">';
@@ -150,9 +151,9 @@ sub make_pic_page_inner() {
     print "\n<p><img src=\"../$pic_basename\" alt=\"$comment\"";
     print " width=\"$width\" height=\"$height\" /></p>\n";
     if ($file =~ /pano/) {
-        print_pano_details($file);
+        print_pano_details($file_source);
     } else {
-        print_shooting_details($file);
+        print_shooting_details($file_source);
     }
     print_share_fb();
     print_cc_details($page, $comment, \%opt);
