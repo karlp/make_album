@@ -92,6 +92,8 @@ my $filter_imp = 2; # I use this all the time, so make it the damn default!
 #my $filter_imp = 0; # just while I hack on videos
 my $filter_cap = 0;
 
+my $file_list;
+
 
 ### CSS CONFIG
 
@@ -131,6 +133,7 @@ GetOptions(
     'draw!' => \$do_draw,
     'filter_imp=i' => \$filter_imp,
     'filter_cap' => \$filter_cap,
+    'file_list=s' => \$file_list,
     'font=s' => \$font,
     'force!' => \$force,
     'fontsize=i' => \$fontsize,
@@ -167,7 +170,9 @@ pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 # Files on the command line are MANDATORY!  sort of :) 
 unless ($no_pictures) {
-    pod2usage("$0: No files given.")  if ((@ARGV == 0) && (-t STDIN));
+    if ((@ARGV == 0) && (not defined($file_list)) && (-t STDIN)) {
+        pod2usage("$0: No files given.");
+    }
 }
 
 my @files;
@@ -195,19 +200,41 @@ unless (-d $outdir) {
 # Fix globbing first  ### XXX shouldn't G fix this?
 # At this point, we should only be left with filenames.  options, and invalid options should have been caught earlier.
 # doesn't work particularly well with filenames with spaces on unix. but unix people don't use spaces anyway :)
-my @elements;
-foreach my $arg (@ARGV) {
-	if ($arg =~ /\n/) {
+sub make_file_list {
+    my $listfile = shift;
+    my @args = @_;
+    my @rval;
+    if (defined $listfile && -f $listfile && -r $listfile) {
+        # treat it as gospel, read it, and get real paths out of it somehow...
+        open(LF, $listfile) or die $!;
+        while (<LF>) {
+            chomp;
+            my $proposed = $_;
+            next unless $proposed;
+            #print("looking for file with basename: $proposed\n") if $verbose;
+            my @gr = glob("$proposed */$proposed */*/$proposed");
+            push @rval, grep(-f, @gr);
+        }
+        close(LF);
+    }
+    if (@args > 0) {
+        my @elements;
+        foreach my $arg (@args) {
+	    if ($arg =~ /\n/) {
 		@elements = split /\n/, $arg;
                 # might have non-existent elements? FIXME
-		push @files, @elements;
-	} elsif (-f $arg) {
-		push @files, $arg;
-	} else {
-            print "Skipping non-existant file: $arg\n";
+		push @rval, @elements;
+	    } elsif (-f $arg) {
+		push @rval, $arg;
+	    } else {
+                print "Skipping non-existant file: $arg\n";
+            }
         }
+    }
+    return @rval;
 }
 
+@files = make_file_list($file_list, @ARGV);
 
 # Perhaps we have non-image files that we just want links to, in addition
 # to the images?  Let's filter these out first.
@@ -715,6 +742,14 @@ Filters the list of input pictures to only include those that have an IPTC
 urgency field greater than or equal to this number.  This also includes files that have "Publish" in the special instructions field.
 
 Using this in combination with --filter_cap could have unexpected results
+
+=item B<--file_list filename>
+
+Instead of listing all files on the command line, get the filenames from a file.
+This might be useful if you want to update/regenerate a gallery. The files will be
+looked for in subdirectories if possible. 
+
+This can be used in combination with files on the command line if so desired.
 
 =item B<--font fontname>
 
