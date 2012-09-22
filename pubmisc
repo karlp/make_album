@@ -1,21 +1,24 @@
 #!/usr/bin/perl -w
-# This takes a given image file, and tries to automagically determine the right "misc" gallery to
-# publish the file to.
-# This is in conjunction with the grand unification of the misc pics with the main pics, in fixed month
-# by month "misc" galleries.
-
+# Karl Palsson, 2012.
+# Based on "pubmisc"
+# Given a file, work out what "miscstream" file list it should be appended to,
+# and add it to that file. (Ensuring no duplicates)
+# Afterwards, run make_album with that modified list file.
 
 use Image::ExifTool;
-
+use File::Spec;
 
 # user config....
+my $metadata_root = "~/photos";
+#my $metadata_root = ".";
 my $gallery_base_path = "/home/www/site/pics2";
+#my $gallery_base_path = ".";
 my $gallery_monthly_name = "miscstream"; 
 my $verbose = 1;
 
 my $et = new Image::ExifTool;
-# 2007/July etc
-$et->Options(DateFormat => "%Y/%B");
+# 2007/July/07 (not for human consumption)
+$et->Options(DateFormat => "%Y/%B/%m");
 
 my $outdir;
 foreach my $file (@ARGV) {
@@ -25,14 +28,24 @@ foreach my $file (@ARGV) {
     }
     my $info = $et->ImageInfo($file);
     print "error = " . $$info{'Error'} . "\n" if defined ($$info{'Error'}); 
-    my $gallery_dir = $$info{"DateTimeOriginal"} || $$info{"FileModifyDate"} || die "No date in the file: $file!";
-    $outdir = $gallery_base_path . "/" . $gallery_dir . "/" . $gallery_monthly_name;
+    my $dateinfo = $$info{"DateTimeOriginal"} || $$info{"FileModifyDate"} || die "No date in the file: $file!";
+    my ($year, $month_name, $month) = split(/\//, $dateinfo);
+
+    my $metadata_file = glob("$metadata_root/$year/miscstream.$year$month.list");
+    print("using metadata file: $metadata_file\n");
+    open(ML, "+>>", $metadata_file) or die $!;
+    seek ML, 0, 0;
+    my @entries = <ML>;
+    if (grep(@entries, $file)) {
+        print("$metadata_file already contains an entry for $file\n");
+    } else {
+        print ML "$file\n";
+    }
+    close(ML);
+
+    $outdir = File::Spec->catfile($gallery_base_path, $year, $month_name, $gallery_monthly_name);
     printf "publishing $file to  $outdir\n" if $verbose;
-    print `perl /home/karlp/bin/make_album -outdir $outdir $file  --verbose;`; 
 
-    my ($year, $month_name) = split(/\//, $gallery_dir);
     my $title = "Miscellaneous pictures from $month_name";
-    print `cd $outdir && perl /home/karlp/bin/make_album --outdir . --rows=4 --htmlonly *.jpg *.ogv -title "$title" --reverse;`;
+    print `perl /home/karlp/bin/make_album --outdir $outdir --rows=4 --file_list $metadata_file -title "$title" --reverse;`;
 }
-
-
