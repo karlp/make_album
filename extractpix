@@ -226,7 +226,7 @@ sub choose_directories {
     # Switch to a new suffix if more than 30 minutes elapsed between shots.
     #
     if (!defined($dir) || $elapsed > 3*60*60) {
-      $dir = "${yyyy}_${mm}_${dd}";
+      $dir = "${yyyy}/${yyyy}_${mm}_${dd}";
     }
     # Don't like this.  I like not making new directories when we shoot over
     # midnight, but during the day, I want one directory.
