@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
-# COPYRIGHT Karl Palsson, 2002, 2003, 2004, 2005
+# COPYRIGHT Karl Palsson, 2002, 2003, 2004, 2005, 2012
+# This scans and creates the index at tweak.net.au/pics2
 
 use strict;
 
