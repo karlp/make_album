@@ -200,6 +200,20 @@ unless (-d $outdir) {
 # Fix globbing first  ### XXX shouldn't G fix this?
 # At this point, we should only be left with filenames.  options, and invalid options should have been caught earlier.
 # doesn't work particularly well with filenames with spaces on unix. but unix people don't use spaces anyway :)
+
+sub search_for_file {
+    my $ff = shift;
+    my $basepath = shift;
+    my $depth = shift;  # UNUSED! I am lame!
+    
+    # First, is it in the current dir?
+    return $ff if (-f $ff);
+
+    # ok, or look a bit deeper?
+    my @maybe = glob("$basepath/*/$ff $basepath/*/*/$ff");
+    return grep(-f, @maybe);
+}
+
 sub make_file_list {
     my $listfile = shift;
     my @args = @_;
@@ -212,9 +226,7 @@ sub make_file_list {
             chomp;
             my $proposed = $_;
             next unless $proposed;
-            #print("looking for file with basename: $proposed\n") if $verbose;
-            my @gr = glob("$proposed $root/*/$proposed $root/*/*/$proposed");
-            push @rval, grep(-f, @gr);
+            push @rval, search_for_file($proposed, $root, 3);
         }
         close(LF);
     }
