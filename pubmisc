@@ -31,13 +31,14 @@ foreach my $file (@ARGV) {
     my $dateinfo = $$info{"DateTimeOriginal"} || $$info{"FileModifyDate"} || die "No date in the file: $file!";
     my ($year, $month_name, $month) = split(/\//, $dateinfo);
 
-    my $metadata_file = glob("$metadata_root/$year/miscstream.$year$month.list");
-    print("using metadata file: $metadata_file\n");
-    open(ML, "+>>", $metadata_file) or die $!;
+    my @metadata_files = glob("$metadata_root/$year/miscstream.$year$month.list");
+    die "urk" unless (@metadata_files == 1);
+    print("using metadata file: $metadata_files[0]\n");
+    open(ML, "+>>", $metadata_files[0]) or die $!;
     seek ML, 0, 0;
     my @entries = <ML>;
-    if (grep(@entries, $file)) {
-        print("$metadata_file already contains an entry for $file\n");
+    if (grep($file, @entries) > 0) {
+        print("$metadata_files[0] already contains an entry for $file\n");
     } else {
         print ML "$file\n";
     }
@@ -47,5 +48,5 @@ foreach my $file (@ARGV) {
     printf "publishing $file to  $outdir\n" if $verbose;
 
     my $title = "Miscellaneous pictures from $month_name";
-    print `perl /home/karlp/bin/make_album --outdir $outdir --rows=4 --file_list $metadata_file -title "$title" --reverse;`;
+    print `perl /home/karlp/bin/make_album --outdir $outdir --rows=4 --file_list $metadata_files[0] -title "$title" --reverse;`;
 }
