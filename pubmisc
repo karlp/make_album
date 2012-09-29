@@ -37,7 +37,7 @@ foreach my $file (@ARGV) {
     open(ML, "+>>", $metadata_files[0]) or die $!;
     seek ML, 0, 0;
     my @entries = <ML>;
-    if (grep($file, @entries) > 0) {
+    if (grep(/$file/, @entries) > 0) {
         print("$metadata_files[0] already contains an entry for $file\n");
     } else {
         print ML "$file\n";
