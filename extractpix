@@ -80,7 +80,8 @@ my $progname = $0; $progname =~ s@.*/@@g;
 my $version = q{ $Revision: 1.3 $ }; $version =~ s/^[^0-9]+([0-9.]+).*$/$1/;
 
 
-my $mountpoint = "/media/EOS_DIGITAL";    # where your camera shows up
+#my $mountpoint = "/media/EOS_DIGITAL";    # where your camera shows up
+my $mountpoint = "/run/media/karlp/EOS_DIGITAL";    # where your camera shows up
 #my $mountpoint = "/home/karl/tempimport";    # where your camera shows up
 #my $mountpoint = "/media/HDD/karl/photos";    # where your camera shows up
 
