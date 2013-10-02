@@ -41,7 +41,7 @@ foreach my $file (@flist) {
 	$doCaption = 0 if $comment =~ /^xx/;  # I use xxxxx and xxx to quickly tag images that need further review.
         $doCaption = 0 if ! $comment;
 
-        my $isMovie = $file =~ /avi|gif|mov|mp4|flv|ogv|mkv/i;
+        my $isMovie = $file =~ /avi|gif|mov|mp4|flv|ogv|mkv|webm/i;
 
         if ($doCaption && $isMovie) {
             print "proceeding w/ movie...";

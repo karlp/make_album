@@ -19,7 +19,7 @@ use Image::ExifTool::FujiFilm;
 use Image::ExifTool::Olympus;
 
 
-my $non_pic_pattern = '(avi|gif|mov|mp4|flv|ogv|mkv)$';  # move up to config when this works....
+my $non_pic_pattern = '(avi|gif|mov|mp4|flv|ogv|mkv|webm)$';  # move up to config when this works....
 my $verbose = 1;
 
 
