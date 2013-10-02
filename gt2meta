@@ -57,6 +57,8 @@ foreach my $file (@flist) {
             }
         } elsif ($doCaption) {
                 my $et = new Image::ExifTool; # make this as late as possible
+		# Gimp on fedora 18 seems to destroy images somehow...?!
+		$et->Options(IgnoreMinorErrors => 1);
                 print "proceeding w/ image...";
                 $et->SetNewValue('Caption-Abstract', $comment);
                 $et->SetNewValue('XMP-dc:Title-x-default', $comment);
