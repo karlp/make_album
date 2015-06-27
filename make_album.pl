@@ -70,7 +70,7 @@ my $gallery_index_link ="/pics2/";   # default for pics2 galleries on tweak
 my $verbose = 3;
 
 # Should we resize the originals when we copy them to the output dir?
-my $do_resize = "800x800>";
+my $do_resize = "1000x1000>";
 #my $do_resize = "45%";
 
 # Should we draw text on the full sized web images?
