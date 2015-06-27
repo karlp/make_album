@@ -150,6 +150,7 @@ sub make_pic_page_inner() {
     my $height = $exif->{ImageHeight};
     print "\n<p><img src=\"../$pic_basename\" alt=\"$comment\"";
     print " width=\"$width\" height=\"$height\" /></p>\n";
+    print_nav_links($prevfile, $nextfile);
     if ($file =~ /pano/) {
         print_pano_details($file_source);
     } else {
