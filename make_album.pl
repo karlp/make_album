@@ -210,7 +210,8 @@ sub search_for_file {
     return $ff if (-f $ff);
 
     # ok, or look a bit deeper?
-    my @maybe = glob("$basepath/*/$ff $basepath/*/*/$ff");
+    my $bp = $basepath ? $basepath : ".";
+    my @maybe = glob("$bp/*/$ff $bp/*/*/$ff");
     return grep(-f, @maybe);
 }
 
