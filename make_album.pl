@@ -317,6 +317,7 @@ sub get_importance {
     }
     my $et = new Image::ExifTool;
     my $info = $et->ImageInfo($file);
+    $et->Options(PrintConv => 0);
     if (defined $et->GetValue("Error")) {
         print "exiftool can't parse: $file, skipping\n" if $verbose;
         return 0;
