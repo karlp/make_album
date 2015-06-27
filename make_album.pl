@@ -44,7 +44,7 @@ my $creativeCommonsEmail = 'sales@tweak.net.au';
 my $creativeCommonsName = "Karl Palsson";
 
 # PREFIXES
-my $outdir = "album";
+my $outdir;
 my $thumbdir = "thumbs";
 my $pichtmldir = "pichtml";
 my $wf_prefix = "web";
@@ -63,7 +63,7 @@ my $videoOverlay = "$lib_dir/overlayPlayIcon.png";
 my $colsperrow = 3;
 my $rowsperpage = 2;
 my $indexbasename = "page";
-my $page_title = "Title goes here";
+my $page_title;
 my $reverse_order = 0;
 my $gallery_index_link ="/pics2/";   # default for pics2 galleries on tweak
 
@@ -107,28 +107,9 @@ my $css_caption_class = "imagecaption";
 
 my ($help, $man);
 
-# Parse the metadata file first.  this is because we always want command line
-# options to override any file options.
-# XXX less whitespace stripping hackery would be nice
-if (-f $config_file) {
-    open(METAFILE, $config_file);
-    while (my $line = <METAFILE>) {
-        $line =~ s/^\s+|\s+$//gm;  #strip leading, trailing space, plus chomp
-        next if ($line eq "");
-        next if ($line =~ /^#/);
-        my @thisline = split ('=', $line);
-        if ($thisline[0] =~ /title/i) {
-            $page_title = $thisline[1];
-        }
-        if ($thisline[0] =~ /outdir/i) {
-            $outdir = $thisline[1];
-            $outdir =~ s/^\s+|\s+$//gm;  #strip leading, trailing space, plus chomp
-        }
-    }
-}
-
 GetOptions(
     'columns|cols=i' => \$colsperrow,
+    'config_file=s' => \$config_file,
     'copyright=s' => \$copyright_global,
     'draw!' => \$do_draw,
     'filter_imp=i' => \$filter_imp,
@@ -167,6 +148,29 @@ GetOptions(
 
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+# Parse the metadata file.  carefully allow command line options to override
+# config file settings.
+# XXX less whitespace stripping hackery would be nice
+if (-f $config_file) {
+    open(METAFILE, $config_file);
+    while (my $line = <METAFILE>) {
+        $line =~ s/^\s+|\s+$//gm;  #strip leading, trailing space, plus chomp
+        next if ($line eq "");
+        next if ($line =~ /^#/);
+        my @thisline = split ('=', $line);
+        if ($thisline[0] =~ /title/i) {
+            $page_title = $thisline[1] unless $page_title;
+        }
+        if ($thisline[0] =~ /outdir/i) {
+            $thisline[1] =~ s/^\s+|\s+$//gm;  #strip leading, trailing space, plus chomp
+            $outdir = $thisline[1] unless $outdir;
+        }
+    }
+}
+
+$page_title = "Title goes here" unless $page_title;
+$outdir = "album" unless $outdir;
 
 # Files on the command line are MANDATORY!  sort of :) 
 unless ($no_pictures) {
@@ -740,6 +744,13 @@ config options are at the top of the script
 =item B<--columns --cols num> I<(default 3)>
 
 Number of columns per row for thumbnails on the index page
+
+=item B<--config_file file> I<(default gallery.metadata)
+
+Lists the output dir and gallery title as key=value pairs
+
+  title=blah with out quotes
+  outdir=/full/path
 
 =item B<--copyright text> I<(default nothing)>
 
