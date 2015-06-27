@@ -11,7 +11,7 @@ use File::Spec;
 # user config....
 my $metadata_root = "~/photos";
 #my $metadata_root = ".";
-my $gallery_base_path = "/home/www/site/pics2";
+my $gallery_base_path = "/home/tweak.net.au/www/site/pics2";
 #my $gallery_base_path = ".";
 my $gallery_monthly_name = "miscstream"; 
 my $verbose = 1;
