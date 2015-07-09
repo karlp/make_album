@@ -30,7 +30,7 @@ my $copyright;
 my $text_colour = "orange";
 my $font = "c:/bin/arial.ttf";
 my $fontsize = 16;
-my $quality = 60;
+my $quality = 90;
 my $stylesheet = "/tweak2.css";
 my $stylesheet2 = "/colour-tweak.css";
 my $report_file = "tripreport.txt";  # default for karl!
