@@ -70,7 +70,7 @@ my $gallery_index_link ="/pics2/";   # default for pics2 galleries on tweak
 my $verbose = 3;
 
 # Should we resize the originals when we copy them to the output dir?
-my $do_resize = "1000x1000>";
+my $do_resize = "1200x1200>";
 #my $do_resize = "45%";
 
 # Should we draw text on the full sized web images?
@@ -648,10 +648,10 @@ sub make_web_full ($) {
     }
 
     # fiddle with the resizing for special images....
-    # any file with "pano" in the name gets resized to 800 high, rather than max side of 800,
+    # any file with "pano" in the name gets resized to fixed height, rather than max side,
     # NOTE: this blatantly overrides the $do_resize variable, also see PageGen for where the details are modified
     if ($file  =~ /pano/) {
-        $do_resize = "x800";
+        $do_resize = "x1200";
     }
     
     my $cmd = "convert \"$file\" -quality $quality -gravity SouthEast";
