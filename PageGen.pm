@@ -158,6 +158,7 @@ sub make_pic_page_inner() {
     }
     print_share_fb();
     print_cc_details($page, $comment, \%opt);
+    print_scripts();
 }
 
 
@@ -244,22 +245,18 @@ sub print_nav_links() {
     my $prevfile = shift;
     my $nextfile = shift;
     
-    print "\n<p>";
+    print "<div>\n<ul class=\"pagination\">";
     if (defined $prevfile) {
         # if there's no .jpg on the end, doesn't remove it :)
         $prevfile = basename($prevfile, ".jpg");
-        print "<a href=\"$prevfile.html\" id=\"prevfile\">Prev</a> - ";
-    } else {
-        print "Prev - ";
+        print "<li class=\"pagination-prev\"><a href=\"$prevfile.html\" id=\"prevfile\">&#8592; Prev</a></li>\n";
     }
-    print "<a href=\"../\" id=\"upfile\">Up</a> - ";
+    print "<li><a href=\"../\" id=\"upfile\">Up</a></li>\n";
     if (defined $nextfile) {
         $nextfile = basename($nextfile, ".jpg");
-        print "<a href=\"$nextfile.html\" id=\"nextfile\">Next</a>";
-    } else {
-        print "Next";
+        print "<li class=\"pagination-next\"><a href=\"$nextfile.html\" id=\"nextfile\">Next &#8594;</a></li>\n";
     }
-    print "</p>\n";
+    print "</ul>\n<div><div style=\"clear:both;\"></div>\n";
 }
 
 
@@ -360,6 +357,21 @@ sub print_video_details ($) {
     printf "File size: %s<br/>\n", $filesize;
     printf "<p>Direct Download: <a href='../$filename.mp4'>MP4</a> or <a href='../$filename.ogv'>OGV</a></p>";
 
+
+}
+
+sub print_scripts() {
+
+	print <<HERE;
+<script src="/js/keyboard-pagination.min.js"></script>
+<script type="text/javascript">
+keyboardPagination( '.pagination',
+{
+    prev: '.pagination-prev',
+    next: '.pagination-next'
+});
+</script>
+HERE
 
 }
 
