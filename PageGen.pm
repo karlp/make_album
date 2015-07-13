@@ -251,7 +251,7 @@ sub print_nav_links() {
         $prevfile = basename($prevfile, ".jpg");
         print "<li class=\"pagination-prev\"><a href=\"$prevfile.html\" id=\"prevfile\">&#8592; Prev</a></li>\n";
     }
-    print "<li><a href=\"../\" id=\"upfile\">Up</a></li>\n";
+    print "<li class=\"pagination-up\"><a href=\"../\" id=\"upfile\">Up</a></li>\n";
     if (defined $nextfile) {
         $nextfile = basename($nextfile, ".jpg");
         print "<li class=\"pagination-next\"><a href=\"$nextfile.html\" id=\"nextfile\">Next &#8594;</a></li>\n";
@@ -368,7 +368,8 @@ sub print_scripts() {
 keyboardPagination( '.pagination',
 {
     prev: '.pagination-prev',
-    next: '.pagination-next'
+    next: '.pagination-next',
+    up: '.pagination-up'
 });
 </script>
 HERE
