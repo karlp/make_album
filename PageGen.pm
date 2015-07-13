@@ -148,8 +148,11 @@ sub make_pic_page_inner() {
     }
     my $width = $exif->{ImageWidth};
     my $height = $exif->{ImageHeight};
-    print "\n<p><img src=\"../$pic_basename\" alt=\"$comment\"";
-    print " width=\"$width\" height=\"$height\" /></p>\n";
+    print <<HERE;
+	<div class="embed-container">
+		<img src="../$pic_basename" alt="$comment"/>
+	</div>
+HERE
     print_nav_links($prevfile, $nextfile);
     if ($file =~ /pano/) {
         print_pano_details($file_source);
