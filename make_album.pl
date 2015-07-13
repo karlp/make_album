@@ -474,20 +474,35 @@ unless (($fcount % $picsperpage) == 0) {
 sub doclose () {
     print "</table>";
     dolinks();  # Would like this here, but currpage has been incremented outside our control
-    print "\n</div></body>";
-    print "</html>";
+    print "\n</div>";
+    print <<HERE;
+<script src="/js/keyboard-pagination.min.js"></script>
+<script type="text/javascript">
+keyboardPagination( '.pagination',
+{
+    num: '.pagination-number',
+    numCurrent: '.pagination-current',
+});
+</script>
+</body>
+</html>
+HERE
 }
 
 sub dolinks () {
     my $i = 1;
     if ($totalpages > 1) {
+	print "<ul class=\"pagination\">";
         for ($i = 1; $i <= $totalpages; $i++){
+	    print "<li class=\"pagination-number";
             if ($i == $currpage) {
-                print "page $i ";
+                print " pagination-current\"><a href=\"\">$i</a>";
             } else {
-                print "<a href=\"$indexbasename"."_$i.html\">page $i</a> ";
+                print "\"><a href=\"$indexbasename"."_$i.html\">$i</a>";
             }
+	    print "</li>";
         }
+	print "</ul>\n<div><div style=\"clear:both;\"></div>\n";
     }
 }	
     
