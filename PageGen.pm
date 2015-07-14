@@ -259,7 +259,7 @@ sub print_nav_links() {
         $nextfile = basename($nextfile, ".jpg");
         print "<li class=\"pagination-next\"><a href=\"$nextfile.html\" id=\"nextfile\">Next &#8594;</a></li>\n";
     }
-    print "</ul>\n<div><div style=\"clear:both;\"></div>\n";
+    print "</ul>\n</div><div style=\"clear:both;\"></div>\n";
 }
 
 
