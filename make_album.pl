@@ -46,7 +46,7 @@ my $creativeCommonsName = "Karl Palsson";
 # PREFIXES
 my $outdir;
 my $thumbdir = "thumbs";
-my $pichtmldir = "pichtml";
+my $pichtmldir = ".";
 my $wf_prefix = "web";
 # Separator is always _ if anyone complains I may change that, but sif
 my $thumb_prefix = "TN";
@@ -447,7 +447,8 @@ foreach $file (@n_files) {
         creativeCommonsName => $creativeCommonsName,
         creativeCommonsEmail => $creativeCommonsEmail,
         comment => $resolvedCaptions{$filename_map{$file}},
-        file_source => $filename_map{$file}
+        file_source => $filename_map{$file},
+	album_title => $page_title
     );
     make_pic_page($file, \%options);
     $loop++;
@@ -858,7 +859,7 @@ Don't actually include pictures.  Marginally useful for constructing pages with 
 
 Specifies the output dir for the album tree.
 
-=item B<--pichtmldir> I<(default pichtml)>
+=item B<--pichtmldir> I<(default .)>
 
 Specifies the subdirectory of the output dir (see --outdir) that the per picture html pages will be stored in.
 

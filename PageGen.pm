@@ -64,7 +64,7 @@ sub make_pic_page {
 
     my $file = shift;
     my %opt = %{$_[0]};
-    my $pichtmldir = $opt{"pichtmldir"} || "pichtml";
+    my $pichtmldir = $opt{"pichtmldir"} || ".";
     my $prevfile = $opt{"prevfile"};
     my $nextfile = $opt{"nextfile"};
     my $style = $opt{"css"};
@@ -117,30 +117,8 @@ sub make_pic_page_inner() {
     my $file_source = $opt{"file_source"};
 
     my $comment = $opt{"comment"} || "No comment in file";
-    print '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-            "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
-    print '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">';
-    print "<head>";
-    print "<link rel='StyleSheet' href='$style' type='text/css'/>";
-    print "<link rel='StyleSheet' href='$style2' type='text/css'/>";
-    print "\n<title>$comment - Large View ($file)</title>\n";
-# Has some bugs in graciously playing with existing hot keys....
-#   print "\n<script type='text/javascript' src='http://code.jquery.com/jquery-1.4.2.min.js'></script>";
-#   print "\n<script type='text/javascript' src='/pics2/extra.js'></script>";
-#   print <<HERE;
-#\n<script type='text/javascript'> 
-#   \$(document).ready(function(){
-#     bindHotKeys();
-#   });
-# </script>
-#HERE
 
-    print "</head><body>\n";
-    print_nav_links($prevfile, $nextfile);
-
-    print "\n<h2>$comment</h2>";
     my ($pic_basename, $path, $suffix) = fileparse($file);
-
     my $exif = Image::ExifTool::ImageInfo($file);
     if (my $error = $exif->{Error}) {
         close PH;
@@ -148,9 +126,31 @@ sub make_pic_page_inner() {
     }
     my $width = $exif->{ImageWidth};
     my $height = $exif->{ImageHeight};
+
+print <<HERE;
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+    xmlns:og="http://ogp.me/ns#"
+>
+<head>
+  <link rel='StyleSheet' href='$style' type='text/css'/>
+  <link rel='StyleSheet' href='$style2' type='text/css'/>
+  <title>$comment - Large View ($file)</title>
+  <meta property='og:type' content='article'/>
+  <meta property='og:title' content='$comment'/>
+  <meta property='og:description' content='A shared photo from the album: $opt{album_title}'/>
+</head>
+<body>
+HERE
+
+    print_nav_links($prevfile, $nextfile);
+
+    print "\n<h2>$comment</h2>";
+
     print <<HERE;
 	<div class="embed-container">
-		<img src="../$pic_basename" alt="$comment"/>
+		<img src="$pic_basename" alt="$comment"/>
 	</div>
 HERE
     print_nav_links($prevfile, $nextfile);
@@ -168,7 +168,7 @@ HERE
 sub make_video_page() {
     my $infile = shift;
     my %opt = %{$_[0]};
-    my $pichtmldir = $opt{"pichtmldir"} || "pichtml";
+    my $pichtmldir = $opt{"pichtmldir"} || ".";
     my $prevfile = $opt{"prevfile"};
     my $nextfile = $opt{"nextfile"};
     my $style = $opt{"css"};
@@ -216,22 +216,22 @@ sub make_video_page() {
     # already have both videos, and need to change suffix, or add suffix)
     print <<HERE;
 <video width="640" height="360" controls="controls" preload>
-    <source src="../$ogvfile" type="video/ogg" />
-    <source src="../$mp4file" type="video/mp4" /><!--[if gt IE 6]>
+    <source src="$ogvfile" type="video/ogg" />
+    <source src="$mp4file" type="video/mp4" /><!--[if gt IE 6]>
     <object width="640" height="375" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"><!
     [endif]--><!--[if !IE]><!-->
-    <object width="640" height="375" type="video/quicktime" data="../$mp4file"><!--<![endif]-->
-    <param name="src" value="../$mp4file" />
+    <object width="640" height="375" type="video/quicktime" data="$mp4file"><!--<![endif]-->
+    <param name="src" value="$mp4file" />
     <param name="autoplay" value="false" />
     <param name="showlogo" value="false" />
         <p>
-            <img src="../thumbs/TN_$file.jpg" alt="\$comment\"/>
+            <img src="thumbs/TN_$file.jpg" alt="\$comment\"/>
         </p>
         <p>
             <strong>No video playback capabilities detected.</strong>
             Try clicking one of these links instead, which might work for you.<br/>
-            <a href="../$mp4file">MPEG4 / H.264 ".mp4" (Internet Explorer/Quicktime)</a> |
-            <a href="../$ogvfile">Ogg Theora &amp; Vorbis ".ogv" (higher res, more open format)</a>
+            <a href="$mp4file">MPEG4 / H.264 ".mp4" (Internet Explorer/Quicktime)</a> |
+            <a href="$ogvfile">Ogg Theora &amp; Vorbis ".ogv" (higher res, more open format)</a>
         </p>
     <!--[if gt IE 6]><!-->
     </object><!--<![endif]-->
@@ -254,7 +254,7 @@ sub print_nav_links() {
         $prevfile = basename($prevfile, ".jpg");
         print "<li class=\"pagination-prev\"><a href=\"$prevfile.html\" id=\"prevfile\">&#8592; Prev</a></li>\n";
     }
-    print "<li class=\"pagination-up\"><a href=\"../\" id=\"upfile\">Up</a></li>\n";
+    print "<li class=\"pagination-up\"><a href=\"./\" id=\"upfile\">Up</a></li>\n";
     if (defined $nextfile) {
         $nextfile = basename($nextfile, ".jpg");
         print "<li class=\"pagination-next\"><a href=\"$nextfile.html\" id=\"nextfile\">Next &#8594;</a></li>\n";
@@ -313,13 +313,15 @@ HERE
 
 sub print_share_fb() {
     print <<FB_SHARE;
-    <div id="sharing"><em>Sharing: </em>
-<script type="text/javascript">function fbs_click()
-    {u=location.href;t=document.title;window.open('http://www.facebook.com/sharer.php?u='+encodeURIComponent(u)+'&amp;t='+encodeURIComponent(t),'sharer','toolbar=0,status=0,width=626,height=436');return
-    false;}</script><a href="http://www.facebook.com/share.php?u=&lt;url>" onclick="return fbs_click()"
-    target="_blank"><img src="http://static.ak.fbcdn.net/rsrc.php/z39E0/hash/ya8q506x.gif" alt="share on
-    facebook" width="16" height="16"/></a><br/>
-    </div>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.4";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="fb-share-button" data-layout="button"></div>
 FB_SHARE
 }
 
@@ -358,7 +360,7 @@ sub print_video_details ($) {
     print "<h3>File Details</h3>\n";
     printf "<p>Date Created: %s<br/>\n", $date;
     printf "File size: %s<br/>\n", $filesize;
-    printf "<p>Direct Download: <a href='../$filename.mp4'>MP4</a> or <a href='../$filename.ogv'>OGV</a></p>";
+    printf "<p>Direct Download: <a href='$filename.mp4'>MP4</a> or <a href='$filename.ogv'>OGV</a></p>";
 
 
 }
@@ -459,11 +461,11 @@ sub print_shooting_details ($) {
         print "Note: this photo is a <a href=\"/pics2/stack_details.html\">stack of two images</a>, the exif should not be";
         print "considered reliable.<br/>\n";
     }
-    printf "Camera: %s (Owner: %s)<br/>\n", $model, $owner;
-    printf "Lens: %s @ %s<br/>\n", $lens, $focal;
-    printf "Exposure: f/%s &amp; %s sec<br/>\n", $aperture, $shutter;
-    printf "Iso: %s<br/>\n", $iso;
     printf "Date Taken: %s<br/>\n", $date; 
+    printf "Exposure: f/%s &amp; %s sec<br/>\n", $aperture, $shutter;
+    printf "Lens: %s @ %s<br/>\n", $lens, $focal;
+    printf "Camera: %s (Owner: %s)<br/>\n", $model, $owner;
+    printf "Iso: %s<br/>\n", $iso;
     print "</p>";
     #optionally add shooting mode, flash details, metering?
 }
