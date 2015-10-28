@@ -394,7 +394,9 @@ sub print_shooting_details ($) {
     }
 
     my $model = $exif->{Model} || "Unknown Camera";
-    my $owner = $exif->{OwnerName} ||  "Unset";
+    my $owner = $exif->{OwnerName} ||
+		$exif->{Artist} ||
+		$exif->{Creator} || "Unset";
     
     # Handle zooms as well as primes
     my $lens_long = $exif->{"LongFocal"};
