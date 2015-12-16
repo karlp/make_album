@@ -338,7 +338,7 @@ sub getlastpicdate {
     my $date;
     return $picdates{$frontpage} if defined $picdates{$frontpage};
 
-    print STDOUT "Calculating date for frontpage...$frontpage" if $verbose;
+    print STDOUT "Calculating date for frontpage: $frontpage" if $verbose;
 
     my ($junk1, $pathbase, $junk2) = fileparse($frontpage);
 
