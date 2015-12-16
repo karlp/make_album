@@ -333,6 +333,30 @@ sub tree_from_file {
 
 my %picdates; #caching please!
 
+sub date_from_picfile {
+	my $infile = shift;
+	my $tree = tree_from_file($infile);
+	print STDOUT "Extracting date from derived file: $infile\n" if $verbose;
+
+	my @sdets = $tree->look_down("_tag", "h3", sub { my @ll = $_[0]->content_list(); $ll[0] =~ /Details/; });
+
+	my @search;
+	# Old pages didn't have divs and structure, but just raw text with br tags
+	if (ref($sdets[0]->right)) {
+		@search = $sdets[0]->right->content_list;
+	} else {
+		@search = $sdets[0]->right;
+	}
+	my @details = map { ref($_) ? () : (/date/i ? $_ : ()) } @search;
+
+	my @datefield = grep(/Date.*?:/, @details);
+	#print STDOUT ("final version of the datefield: @datefield\n") if $verbose;
+	$datefield[0] =~ /Date.*?:(.*)/;
+	my $date = $1;
+	#print STDOUT "Initial from exif hardcoded: $date\n" if $verbose;
+	return $date;
+}
+
 sub getlastpicdate {
     my $frontpage = shift;
     my $date;
@@ -380,12 +404,7 @@ sub getlastpicdate {
     # finally, we have the picture html page, to read the date from.  
     # (I'm reading the date from the exif in the html, not the exif in the file)
     my $picfile = $pathbase . $picpage;
-
-    $tree = tree_from_file($picfile);
-
-    # XXX - more hardcoded strings! from PageGen.pm
-    $tree->as_HTML() =~ /Date.*?:(.*)<br/;
-    $date = $1;
+    $date = date_from_picfile($picfile);
 
     # no exif data
     # so we need to get the actual picture itself, and look at it's last
