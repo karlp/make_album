@@ -372,7 +372,9 @@ sub getlastpicdate {
     }
     @links = map {$_->attr('href')} $tree->look_down("_tag", "a");
     # secondary pages don't contain story, so only links are to pictures
-    @links = grep (/pichtml/, @links);
+    # A little gross, but after some js hacking, we don't have clear prefixes on the per pic html files
+    @links = grep (!/page_.*.htm/, @links);
+    @links = grep (/.html?$/, @links);
     my $picpage = pop @links;
     # FIXME - if there are no picpages, this will bomb....
     # finally, we have the picture html page, to read the date from.  
