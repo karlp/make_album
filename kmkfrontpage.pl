@@ -346,10 +346,8 @@ sub getlastpicdate {
     # go to a later page
     my $tree = tree_from_file($frontpage);
     my @links_raw = map {$_->attr('href')} $tree->look_down("_tag", "a");
+    # remove empty links, like for keyboard shortcut stuff
     my @links = grep ($_, @links_raw);
-    if ($#links_raw != $#links) {
-        print "WARN: Bad link found in $frontpage\n";
-    }
 
     # so, we could have links to other pages, links to pictures, or links 
     # from the story to external sites.
