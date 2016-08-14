@@ -34,7 +34,10 @@ fi
 if [ ! -e "$OUTFILE_OGV" ]
 then
     echo "Generating web ogv file: $OUTFILE_OGV";
-    ffmpeg2theora --videoquality 6 --audioquality 1 --max_size 640x640 "$INFILE" -o "$OUTFILE_OGV"
+#    ffmpeg2theora --two-pass --optimize --videoquality 6 --audioquality 1 --max_size 640x640 "$INFILE" -o "$OUTFILE_OGV"
+    # from: http://superuser.com/a/794924/138276
+    ffmpeg -i "$INFILE" -codec:v libtheora -qscale:v 7 -codec:a libvorbis -qscale:a 2 \
+	-filter_complex "scale=iw*min(1\,min(960/iw\,540/ih)):-1" "$OUTFILE_OGV"
 else
     echo "$OUTFILE_OGV already exists, refusing to trample!"
 fi
