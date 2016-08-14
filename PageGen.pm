@@ -355,7 +355,7 @@ sub print_video_details ($) {
         close PH;
         croak "Can't parse $file : $error\n";
     }
-    my $date = $exif->{CreateDate} || "Bad file info!";
+    my $date = $exif->{CreateDate} || $exif->{CreationTime} || "Bad file info!";
     my $filesize = $exif->{FileSize};
     print "<h3>File Details</h3>\n";
     printf "<p>Date Created: %s<br/>\n", $date;
