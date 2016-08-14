@@ -17,6 +17,7 @@ use XML::XPath::XMLParser;
 use Image::ExifTool;
 use Encode;
 use MSDOS::Descript;
+use File::Spec;
     
 my @flist;
 (@flist = @ARGV) || die ("you probably meant to specify some files to work with");
@@ -24,7 +25,9 @@ my @flist;
 foreach my $file (@flist) {
 
 	print "Processing $file : ";
-	unless (open( MYFILE, ".comments/$file.xml" )) {
+	my (undef, $dirs, $basef) = File::Spec->splitpath($file, 0);
+	$dirs = "." unless $dirs;
+	unless (open( MYFILE, "$dirs/.comments/$basef.xml" )) {
 		print "Skipping, no gthumb comments found\n";
 		next;
 	}
