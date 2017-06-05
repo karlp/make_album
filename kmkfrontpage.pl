@@ -16,7 +16,7 @@ use Date::Parse;
 use HTML::TreeBuilder;
 
 # App defaults
-my $outfile = "index.shtml";
+my $outfile = "index.html";
 my $scanfile = "page_1.html";
 my $where = ".";
 my $htmlbase = ".";
@@ -116,7 +116,6 @@ print <<"HEADER";
 <body>
 <div class="navigation"><a href="/">Home</a></div>
 <div class="main">
-<!--#include virtual="/include/lastupdated.shtml"-->
 <h2>$page_title</h2>
 <p>$page_desc
 <p>Pages marked $newtag have been added (or just updated) within $timefornew days of this page being created
@@ -454,7 +453,7 @@ stuff
 
 =over 8
 
-=item B<--outfile> I<(default index.shtml)>
+=item B<--outfile> I<(default index.html)>
 
 Name of output file
 
