@@ -297,12 +297,12 @@ sub print_cc_details() {
         print "\n\n";
         print <<HERE;
         <div id="creativeCommons">
-<a rel="license" href="http://creativecommons.org/licenses/$creativeCommons/">
+<a rel="license" href="https://creativecommons.org/licenses/$creativeCommons/">
 <img alt="Creative Commons License" style="border-width:0"
-src="http://i.creativecommons.org/l/$creativeCommons/88x31.png" width="88" height="31" />
+src="https://i.creativecommons.org/l/$creativeCommons/88x31.png" width="88" height="31" />
 </a><br />
 <em>$title</em>, by $creativeCommonsName
-   is licensed under a <a rel="license" href="http://creativecommons.org/licenses/$creativeCommons/">$creativeCommonsTitle</a>.
+   is licensed under a <a rel="license" href="https://creativecommons.org/licenses/$creativeCommons/">$creativeCommonsTitle</a>.
 <br />Permissions beyond the scope of this license may be available at <a href="mailto:$creativeCommonsEmail" rel="cc:morePermissions">$creativeCommonsEmail</a>.
     </div>
 HERE

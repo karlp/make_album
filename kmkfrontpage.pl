@@ -29,7 +29,7 @@ my $newtag = '<span class="newgallery">NEW</span>';
 my $rss = 1; # enable rss 2.0 output for "new" galleries
 my $rss_file = "feed.rss";
 my $rss_title = $page_title;
-my $rss_baseurl = "http://www.tweak.net.au/pics2";
+my $rss_baseurl = "https://www.tweak.net.au/pics2";
 my $rss_description = "$page_desc - galleries that have been updated in the last
 $timefornew days (since feed publication date)";
 
