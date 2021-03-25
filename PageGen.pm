@@ -215,12 +215,12 @@ sub make_video_page() {
     ## FIXME - XXX need to be able to decide whether we are remaking (and so
     # already have both videos, and need to change suffix, or add suffix)
     print <<HERE;
-<video width="640" height="360" controls="controls" preload>
+<video width="1280" height="720" controls="controls" preload>
     <source src="$ogvfile" type="video/ogg" />
     <source src="$mp4file" type="video/mp4" /><!--[if gt IE 6]>
-    <object width="640" height="375" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"><!
+    <object width="1280" height="720" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"><!
     [endif]--><!--[if !IE]><!-->
-    <object width="640" height="375" type="video/quicktime" data="$mp4file"><!--<![endif]-->
+    <object width="1280" height="720" type="video/quicktime" data="$mp4file"><!--<![endif]-->
     <param name="src" value="$mp4file" />
     <param name="autoplay" value="false" />
     <param name="showlogo" value="false" />

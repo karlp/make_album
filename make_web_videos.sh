@@ -37,7 +37,7 @@ then
 #    ffmpeg2theora --two-pass --optimize --videoquality 6 --audioquality 1 --max_size 640x640 "$INFILE" -o "$OUTFILE_OGV"
     # from: http://superuser.com/a/794924/138276
     ffmpeg -i "$INFILE" -codec:v libtheora -qscale:v 7 -codec:a libvorbis -qscale:a 2 \
-	-filter_complex "scale=iw*min(1\,min(960/iw\,540/ih)):-1" "$OUTFILE_OGV"
+	-filter_complex "scale=iw*min(1\,min(1280/iw\,720/ih)):-1" "$OUTFILE_OGV"
 else
     echo "$OUTFILE_OGV already exists, refusing to trample!"
 fi
@@ -48,7 +48,8 @@ then
     # fuck knows what the difference is.
     #HandBrakeCLI --preset "Normal"  --width 640 -X 640 -vb 600 --two-pass --turbo --input "$INFILE" --output "$OUTFILE_MP4"
     # this forces it to only 480 wide, but qt is too high on cpu anyway, so that's ok. (width settings are ignored with this preset)
-    HandBrakeCLI --no-dvdnav --preset "iPhone & iPod Touch"  -O -vb 600 --two-pass --turbo --input "$INFILE" --output "$OUTFILE_MP4"
+    #HandBrakeCLI --no-dvdnav --preset "iPhone & iPod Touch"  -O -vb 600 --two-pass --turbo --input "$INFILE" --output "$OUTFILE_MP4"
+    HandBrakeCLI --no-dvdnav --preset "HQ 720p30 Surround"  -O --two-pass --turbo --input "$INFILE" --output "$OUTFILE_MP4"
 else
     echo "$OUTFILE_MP4 already exists, refusing to trample!"
 fi
