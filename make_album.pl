@@ -297,7 +297,7 @@ sub get_importance_video {
     my $file = shift;
     # for files that we can't embed things in easily... use the description file we had earlier...
     if (defined $sideCaptions{$file}) {
-        print "Processed importance for $file: 1\n" if $verbose;
+        print "Processed importance for $file from sideCaption: 1\n" if $verbose;
         return 1;
     }
     # or, if it's a mkv or ogv...
