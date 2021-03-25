@@ -37,12 +37,14 @@ foreach my $file (@flist) {
         # gthumb writes xml entities, and for some reason, these get converted into latin1, not utf8 at xpath time?!
         # at least gthumb11 doesn't have zipped xml files with .xml extensions, but it still has this utf8 decl vs 8859-1
         # reality insanity.
+        # FIXME - this is apparently no longer the case for comments version 3?
         $comment = Encode::decode('iso-8859-1', $comment);
 	# TODO - should probably use nodesets for keywords?
 
 	my $doCaption = 1;
 	$doCaption = 0 if $comment =~ /^xx/;  # I use xxxxx and xxx to quickly tag images that need further review.
         $doCaption = 0 if ! $comment;
+	$doCaption = 0 if $comment =~ /charset=Ascii/; # fucking gthumb bugs in fedora 32
 
         my $isMovie = $file =~ /avi|gif|mov|mp4|flv|ogv|mkv|webm/i;
 
