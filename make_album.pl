@@ -475,9 +475,9 @@ unless (($fcount % $picsperpage) == 0) {
 sub doclose () {
     print "</table>";
     dolinks();  # Would like this here, but currpage has been incremented outside our control
-    print "\n</div>";
     print <<HERE;
-<script src="/js/keyboard-pagination.min.js"></script>
+    </div>
+<script src="/js/keyboard-pagination.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 keyboardPagination( '.pagination',
 {
@@ -503,7 +503,7 @@ sub dolinks () {
             }
 	    print "</li>";
         }
-	print "</ul>\n<div><div style=\"clear:both;\"></div>\n";
+	print "</ul>\n<div style=\"clear:both;\"></div>\n";
     }
 }	
     
@@ -559,7 +559,7 @@ foreach $file (@n_files) {
 
     my $comment = $resolvedCaptions{$filename_map{$file}};
 
-    print "\n<tr>" if (($loop == 0) && ($currrow == 0));
+    print "\n<tr>" if ((($loop % $colsperrow) == 0) && ($currrow == 0));
     print "\n<td>";
     my $thumb_fname = "$thumbdir/${thumb_prefix}_$basename.$thumb_format";
     my $exif = Image::ExifTool::ImageInfo("$outdir/$thumb_fname");
