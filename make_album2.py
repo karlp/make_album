@@ -249,6 +249,15 @@ def update_metadata(opts):
         opts.outdir = cfg.get("outdir", opts.outdir_default)
     return opts
 
+def searchable_file(string):
+    """Look for a file in pwd, and also the location of this script itself"""
+    if os.path.exists(string):
+        return string
+    fn = os.path.join(os.path.dirname(__file__), string)
+    if os.path.exists(fn):
+        return fn
+    raise argparse.ArgumentTypeError(f"File not found: {string}")
+
 def get_args():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -273,29 +282,22 @@ def get_args():
 
     ap.add_argument("--image_dimension", default=1200, help="Maximum dimension of resized output images")
     ap.add_argument("--image_format", default="jpg", choices=["jpg"], help="format of resized output images (for static images only)")
-    ap.add_argument("--item_prefix", default="imagur/web_", help="filename prefix for resized output files")
-    ap.add_argument("--item_suffix", default="_webble", help="filename suffix for resized output files")
+    ap.add_argument("--item_prefix", default="", help="filename prefix for resized output files")
+    ap.add_argument("--item_suffix", default="_web", help="filename suffix for resized output files")
 
-    ap.add_argument("--picpage_prefix", default="pickle/piccc_", help="filename prefix for per picture html")
+    ap.add_argument("--picpage_prefix", default="disp_", help="filename prefix for per picture html")
 
     ap.add_argument("--thumb_format", default="png", choices=["png", "jpg"], help="what format should thumbs be created in")
-    ap.add_argument("--thumb_prefix", default="thumbalicious/TTN_", help="filename prefix for thumbnails")
+    ap.add_argument("--thumb_prefix", default="thumbs/", help="filename prefix for thumbnails")
     ap.add_argument("--thumb_suffix", default="_TN", help="filename suffix for thumbnails")
     ap.add_argument("--thumb_dimension", default=250, help="Maximum dimension of a thumbnail image, in pixels")
-    # FIXME - we really would like to be able to find this in our own "resources" ?
-    ap.add_argument("--thumb_overlay_video", default="overlayPlayIcon.png", help="a file to overlay on a video thumbnail")
+    ap.add_argument("--thumb_overlay_video", default="overlayPlayIcon.png", help="a file to overlay on a video thumbnail", type=searchable_file)
 
     ap.add_argument("--force", action="store_true", help="Force re-conversion of output images/files.")
 
     opts = ap.parse_args()
     opts = update_metadata(opts)
-    # Attemmpt to search for some files specified
-    if opts.thumb_overlay_video and not os.path.exists(opts.thumb_overlay_video):
-        fn = os.path.join(os.path.dirname(__file__), opts.thumb_overlay_video)
-        if os.path.exists(fn):
-            opts.thumb_overlay_video = fn
-        else:
-            raise Exception("thumb_overlay_video file specified not found?")
+
     print(opts)
     return opts
 
@@ -343,7 +345,8 @@ def do_main(opts):
 
     [log.debug("item: %s", i) for i in items]
 
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader("."),
+    # Apparently jinja doesn't like absolute paths?
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader([".", os.path.dirname(__file__)]),
                              autoescape=jinja2.select_autoescape(['html', 'xml']),
                              undefined=jinja2.DebugUndefined)
     env.globals = dict(opts=opts, tripreport=opts.tripreport.read().decode("utf8"))
