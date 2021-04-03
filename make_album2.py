@@ -1,3 +1,4 @@
+#!/home/karlp/src/make_album/.env3/bin/python
 #!/usr/bin/env python3
 """
 Turns a list of files (pictures, movies...) into a static html gallery.
@@ -194,7 +195,7 @@ class Item:
             return
         log.debug("Creating output for %s", self.bn)
         if self.is_video():
-            cmd = f"/home/karlp/bin/make_web_videos.sh {self.srcfn} {self.ofn_mp4} {self.ofn_ogv}"
+            cmd = f"make_web_videos.sh {self.srcfn} {self.ofn_mp4} {self.ofn_ogv}"
             subprocess.run(cmd.split(), check=True, shell=False)
         else:
             with Image.open(self.srcfn) as im:
@@ -259,6 +260,10 @@ def searchable_file(string):
     if os.path.exists(string):
         return string
     fn = os.path.join(os.path.dirname(__file__), string)
+    if os.path.exists(fn):
+        return fn
+    # Gross hack to look in repo as well.
+    fn = os.path.join("/home/karlp/src/make_album", string)
     if os.path.exists(fn):
         return fn
     raise argparse.ArgumentTypeError(f"File not found: {string}")
@@ -350,7 +355,7 @@ def do_main(opts):
     [log.debug("item: %s", i) for i in items]
 
     # Apparently jinja doesn't like absolute paths?
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader([".", os.path.dirname(__file__)]),
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader([".", os.path.dirname(__file__), "/home/karlp/src/make_album"]),
                              autoescape=jinja2.select_autoescape(['html', 'xml']),
                              undefined=jinja2.DebugUndefined)
     env.globals = dict(opts=opts, tripreport=opts.tripreport.read().decode("utf8"))
