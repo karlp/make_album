@@ -82,10 +82,12 @@
   <p>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
   {% endif %}
   <p>Date Taken: {{item.meta_create_date()}}
+  {% if item.metadata["EXIF:LensModel"] %}
   <p>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
   <p>Lens: {{item.metadata["EXIF:LensModel"]}} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
   <p>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
   <p>ISO: {{item.metadata["EXIF:ISO"]}}
+  {% endif %}
   {% endif %}
   {% if item.is_pano() %}
 <h3>Shooting Details</h3>

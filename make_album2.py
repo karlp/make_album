@@ -145,9 +145,12 @@ class Item:
     def meta_create_date(self):
         """
         Get a "creation date" from a file's metadata, regardless of what of file it is...
+        TODO - use actual datetimeobjects natively, not strings?
         :return:
         """
-        d = None
+        # higher priority last.
+        d = datetime.datetime.fromtimestamp(os.path.getmtime(self.srcfn))
+        d = datetime.datetime.strftime(d, "%Y:%m:%d %H:%M:%S")
         d = self.metadata.get("QuickTime:CreateDate", d)
         d = self.metadata.get("EXIF:DateTimeOriginal", d)
         return d
@@ -300,7 +303,6 @@ def get_args():
     opts = ap.parse_args()
     opts = update_metadata(opts)
 
-    print(opts)
     return opts
 
 def handle_sorting(items, opts):
