@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
+    xmlns:og="http://ogp.me/ns#"
+>
+<head>
+  <link rel='StyleSheet' href='/tweak2.css' type='text/css'/>
+  <link rel='StyleSheet' href='/colour-tweak.css' type='text/css'/>
+  <title>{{item.title()}}</title>
+  <meta property='og:type' content='article'/>
+  <meta property='og:title' content='{{item.title()}}'/>
+  <meta property='og:description' content='{{item.title_share()}}'/>
+</head>
+<body>
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v10.0" nonce="jDBGgx9d"></script>
+<div>
+<ul class="pagination">
+<!-- fixme subtemplate for pageination? -->
+  {% if item.prev %}
+  <li class="pagination-prev"><a href="{{item.prev.page_from_page}}" id="prevfile">&#8592; Prev</a></li>
+  {% endif %}
+  <li class="pagination-up"><a href="./" id="upfile">Up</a></li>
+  {% if item.next %}
+  <li class="pagination-next"><a href="{{item.next.page_from_page}}" id="nextfile">Next &#8594;</a></li>
+  {% endif %}
+</ul>
+</div><div style="clear:both;"></div>
+
+<h2>{{item.title()}}</h2>
+
+{% if item.is_photo() or item.is_pano() %}
+  <div class="embed-container">
+    <img src="{{item.ofn_from_page}}" alt="{{item.title()}}"/>
+  </div>
+<div>
+{% endif %}
+{% if item.is_video() %}
+<video width="1280" height="720" controls="controls" preload>
+    <source src="{{item.dl_ogv}}" type="video/ogg" />
+    <source src="{{item.dl_mp4}}" type="video/mp4" /><!--[if gt IE 6]>
+    <object width="1280" height="720" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"><!
+    [endif]--><!--[if !IE]><!-->
+    <object width="1280" height="720" type="video/quicktime" data="{{item.dl_mp4}}"><!--<![endif]-->
+    <param name="src" value="{{item.dl_mp4}}" />
+    <param name="autoplay" value="false" />
+    <param name="showlogo" value="false" />
+        <p>
+            <img src="{{item.tfn}}" alt="Thumbnail preview of video file"/>
+        </p>
+        <p>
+            <strong>No video playback capabilities detected.</strong>
+            Try clicking one of these links instead, which might work for you.<br/>
+            <a href="{{item.dl_mp4}}">MPEG4 / H.264 ".mp4" (Internet Explorer/Quicktime)</a> |
+            <a href="{{item.dl_ogv}}">Ogg Theora &amp; Vorbis ".ogv" (higher res, more open format)</a>
+        </p>
+    <!--[if gt IE 6]><!-->
+    </object><!--<![endif]-->
+</video>
+{% endif %}
+
+<ul class="pagination">
+<!-- fixme subtemplate for pageination? -->
+  {% if item.prev %}
+  <li class="pagination-prev"><a href="{{item.prev.page_from_page}}" id="prevfile">&#8592; Prev</a></li>
+  {% endif %}
+  <li class="pagination-up"><a href="./" id="upfile">Up</a></li>
+  {% if item.next %}
+  <li class="pagination-next"><a href="{{item.next.page_from_page}}" id="nextfile">Next &#8594;</a></li>
+  {% endif %}
+</ul>
+
+</div>
+{# old gallery had a "pano! scroll sideways!" here?#}
+<div style="clear:both;"></div>
+  {% if item.is_photo() %}
+<h3>Shooting Details</h3>
+  {% if item.is_art() %}
+  <p>Note: this photo has been edited for artistic effect, exif details are from original source
+  {% endif %}
+  {% if item.is_stack() %}
+  <p>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
+  {% endif %}
+  <p>Date Taken: {{item.meta_create_date()}}
+  <p>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
+  <p>Lens: {{item.metadata["EXIF:LensModel"]}} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
+  <p>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
+  <p>ISO: {{item.metadata["EXIF:ISO"]}}
+  {% endif %}
+  {% if item.is_pano() %}
+<h3>Shooting Details</h3>
+  <p>Date Taken: {{item.meta_create_date()}}
+  <p>This is stitched panorama of multiple images, cut and cropped and possibly edited for effect. No shooting details would be relevant here.
+  {% endif %}
+  {% if item.is_video() %}
+<h3>File Details</h3>
+  <p>Date Taken: {{item.meta_create_date()}}
+  <p>Direct Download <a href="{{item.dl_mp4}}">MP4</a> or <a href="{{item.dl_ogv}}">OGV</a>
+
+  {% endif %}
+
+
+
+  </p>
+<div class="fb-share-button" data-layout="button" data-size="small"><a target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Ftweak.net.au%2Fpics2&amp;src=sdkpreparse" class="fb-xfbml-parse-ignore">Share</a></div>
+
+        <div id="creativeCommons">
+<a rel="license" href="https://creativecommons.org/licenses/by-nc/3.0/">
+<img alt="Creative Commons License" style="border-width:0"
+src="https://i.creativecommons.org/l/by-nc/3.0/88x31.png" width="88" height="31" />
+</a><br />
+<em>{{item.title()}}</em>, by {{item.copyright()}}
+   is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-nc/3.0/">Creative Commons Attribution-Noncommercial 3.0 Unported License</a>.
+<br />Permissions beyond the scope of this license may be available at <a href="mailto:sales@tweak.net.au" rel="cc:morePermissions">sales@tweak.net.au</a>.
+    </div>
+
+<script src="/js/keyboard-pagination.min.js"></script>
+<script type="text/javascript">
+keyboardPagination( '.pagination',
+{
+    prev: '.pagination-prev',
+    next: '.pagination-next',
+    up: '.pagination-up'
+});
+</script>
+
+</body>
+</html>

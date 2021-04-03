@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<link rel="StyleSheet" href="/colour-tweak.css" type="text/css">
+<link rel="StyleSheet" href="/tweak2.css" type="text/css">
+<title>{{title}}</title>
+</head>
+<body>
+<div class="main">
+<p><a href="/pics2/">Up to index</a>
+<h2>{{title}}</h2>
+<hr>
+<p><em>Pictures are at the bottom...</em></p>
+<div class="story">
+{{ tripreport }}
+</div>
+<hr>
+
+<ul class="pagination">
+ {% for p in pages %}
+   {% if p.idx == page.idx %}
+  <li class="pagination-number pagination-current"><a href="">{{page.idx}}</a></li>
+  {% else %}
+  <li class="pagination-number"><a href="page_{{p.idx}}.html">{{p.idx}}</a></li>
+  {% endif %}
+  {% endfor %}
+</ul>
+<div style="clear:both;"></div>
+
+<table class="ma_gallery_table">
+{% for item in page.items %}
+{% if loop.index0 is divisibleby opts.cols %}
+<tr>
+{% endif %}
+
+<td><a href="{{item.page_from_index}}"><img src="{{item.tfn_from_index}}" alt="{{item.title()}}" width="{{item.thumb_x}}" height="{{item.thumb_y}}"></a><p class="imagecaption">{{item.title()}}</p>
+{% endfor %}
+
+</table>
+
+<ul class="pagination">
+ {% for p in pages %}
+   {% if p.idx == page.idx %}
+  <li class="pagination-number pagination-current"><a href="">{{page.idx}}</a></li>
+  {% else %}
+  <li class="pagination-number"><a href="page_{{p.idx}}.html">{{p.idx}}</a></li>
+  {% endif %}
+  {% endfor %}
+</ul>
+
+<div style="clear:both;"></div>
+    </div>
+
+<script src="/js/keyboard-pagination.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+keyboardPagination( '.pagination',
+{
+    num: '.pagination-number',
+    numCurrent: '.pagination-current',
+});
+</script>
+</body>
+</html>
