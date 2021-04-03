@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
 Turns a list of files (pictures, movies...) into a static html gallery.
-Inpsired by Karl's vintage perl scripts, "make_album.pl" and "PageGen.pm"
+Inspired by Karl's vintage perl scripts, "make_album.pl" and "PageGen.pm"
 but updated to be a bit more maintainable going forward.
+
+TODO:
+ * sorting options on command line (ie, --reverse is used for misc galleries!)
+ * support for file lists (ie, used by misc galleries)
+
 """
 import argparse
 import configparser
@@ -16,10 +21,7 @@ import subprocess
 
 import jinja2
 from PIL import Image, ImageFont, ImageDraw
-#from PIL.ExifTags import TAG
-import exiftool # might be enough in Pillow? we're only reading...
-#import exifread # no, this is missing chunks, and it's tedious to re-calculate, and it's not a relly nice api
-
+import exiftool # The only thing we trust.
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
