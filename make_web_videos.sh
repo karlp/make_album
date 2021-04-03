@@ -10,13 +10,13 @@ if [ -z "$INFILE" ]
 then
     echo "Usage is <program> <infile> [outfile]"
     echo "outfile will default if not given, and will never overwrite"
-    exit
+    exit 1
 fi
 
 if [ ! -e "$INFILE" ]
 then
     echo "$INFILE doesn't exist!" 
-    exit
+    exit 1
 fi
 
 if [ -z "$OUTFILE_MP4" ] 
