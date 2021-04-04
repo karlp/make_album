@@ -9,11 +9,13 @@
 <p><a href="/pics2/">Up to index</a>
 <h2>{{title}}</h2>
 <hr>
+{% if page.idx == 1 %}
 <p><em>Pictures are at the bottom...</em></p>
 <div class="story">
 {{ tripreport }}
 </div>
 <hr>
+{% endif %}
 
 <ul class="pagination">
  {% for p in pages %}
