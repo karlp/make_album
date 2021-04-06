@@ -231,8 +231,9 @@ class Item:
 
 class Page:
     """Represents a thumbnail index page"""
-    def __init__(self, idx):
+    def __init__(self, idx, opts):
         self.idx = idx
+        self.opts = opts
 
 def update_metadata(opts):
     """
@@ -368,7 +369,7 @@ def do_main(opts):
     if nom_pages > page_count:
         page_count = page_count + 1
 
-    pages = [Page(i+1) for i in range(page_count)]
+    pages = [Page(i+1, opts) for i in range(page_count)]
     log.info("Creating %d pages of %d rows of %d", page_count, opts.rows, opts.cols)
 
     items_chunked = list(itertools.zip_longest(*[iter(items)] * (opts.rows * opts.cols)))
