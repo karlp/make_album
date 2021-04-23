@@ -82,6 +82,7 @@ class Item:
         self.ofn_from_page = os.path.relpath(self.ofn, os.path.dirname(self.page_fn))
         # thumbs are referenced from the main page...
         self.tfn_from_index = os.path.relpath(self.tfn, opts.outdir)
+        self.tfn_from_page = os.path.relpath(self.tfn, os.path.dirname(self.page_fn))
 
         # used to contain relative hrefs for navigation
         self.prev = None
