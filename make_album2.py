@@ -41,8 +41,10 @@ class Item:
         self.base = os.path.splitext(self.bn)[0]
         # these are real files (but not all are created)
         self.ofn = f"{opts.outdir}/{opts.item_prefix}{self.base}{opts.item_suffix}.{opts.image_format}"
-        self.ofn_mp4 = f"{opts.outdir}/{opts.item_prefix}{self.base}{opts.item_suffix}.mp4"
-        self.ofn_ogv = f"{opts.outdir}/{opts.item_prefix}{self.base}{opts.item_suffix}.ogv"
+        self.ofn_base = f"{opts.outdir}/{opts.item_prefix}{self.base}{opts.item_suffix}"
+        self.ofn_mp4 = f"{self.ofn_base}.mp4"
+        self.ofn_ogv = f"{self.ofn_base}.ogv"
+        self.ofn_webm = f"{self.ofn_base}.webm"
         self.tfn = f"{opts.outdir}/{opts.thumb_prefix}{self.base}{opts.thumb_suffix}.{opts.thumb_format}"
         self.page_fn = f"{opts.outdir}/{opts.picpage_prefix}{self.base}.html"
 
@@ -76,6 +78,7 @@ class Item:
 
         self.dl_mp4 = os.path.relpath(self.ofn_mp4, os.path.dirname(self.page_fn))
         self.dl_ogv = os.path.relpath(self.ofn_ogv, os.path.dirname(self.page_fn))
+        self.dl_webm = os.path.relpath(self.ofn_webm, os.path.dirname(self.page_fn))
 
         # XXX make sure you only pass a _directory_ as arg 2!
         # used to make sure that images can be in separate directories...
@@ -196,7 +199,7 @@ class Item:
             return
         log.debug("Creating output for %s", self.bn)
         if self.is_video():
-            cmd = f"make_web_videos.sh {self.srcfn} {self.ofn_mp4} {self.ofn_ogv}"
+            cmd = f"make_web_videos.sh -i {self.srcfn} -o {self.ofn_base} -m -w"
             subprocess.run(cmd.split(), check=True, shell=False)
         else:
             with Image.open(self.srcfn) as im:

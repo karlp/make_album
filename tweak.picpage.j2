@@ -40,25 +40,14 @@
 {% endif %}
 {% if item.is_video() %}
 <video width="1280" height="720" controls="controls" preload>
-    <source src="{{item.dl_ogv}}" type="video/ogg" />
-    <source src="{{item.dl_mp4}}" type="video/mp4" /><!--[if gt IE 6]>
-    <object width="1280" height="720" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B"><!
-    [endif]--><!--[if !IE]><!-->
-    <object width="1280" height="720" type="video/quicktime" data="{{item.dl_mp4}}"><!--<![endif]-->
-    <param name="src" value="{{item.dl_mp4}}" />
-    <param name="autoplay" value="false" />
-    <param name="showlogo" value="false" />
-        <p>
-            <img src="{{item.tfn_from_page}}" alt="Thumbnail preview of video file"/>
-        </p>
-        <p>
-            <strong>No video playback capabilities detected.</strong>
-            Try clicking one of these links instead, which might work for you.<br/>
-            <a href="{{item.dl_mp4}}">MPEG4 / H.264 ".mp4" (Internet Explorer/Quicktime)</a> |
-            <a href="{{item.dl_ogv}}">Ogg Theora &amp; Vorbis ".ogv" (higher res, more open format)</a>
-        </p>
-    <!--[if gt IE 6]><!-->
-    </object><!--<![endif]-->
+    <source src="{{item.dl_webm}}" type="video/webm;codecs="vp9"" />
+    <source src="{{item.dl_mp4}}" type="video/mp4" />
+    <p>
+        <strong>No video playback capabilities detected.</strong>
+        Try clicking one of these links instead, which might work for you.<br/>
+        <a href="{{item.dl_mp4}}">MPEG4 / H.264 ".mp4"</a> |
+        <a href="{{item.dl_webm}}">WebM / VP9 ".webm" (smaller files, the future!)</a>
+    </p>
 </video>
 {% endif %}
 
@@ -100,7 +89,7 @@
   {% if item.is_video() %}
 <h3>File Details</h3>
   <p>Date Taken: {{item.meta_create_date()}}
-  <p>Direct Download <a href="{{item.dl_mp4}}">MP4</a> or <a href="{{item.dl_ogv}}">OGV</a>
+  <p>Direct Download <a href="{{item.dl_webm}}">WebM</a> or <a href="{{item.dl_mp4}}">MP4</a>
 
   {% endif %}
 
