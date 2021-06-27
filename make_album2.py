@@ -378,7 +378,7 @@ def do_main(opts):
 
     items_chunked = list(itertools.zip_longest(*[iter(items)] * (opts.rows * opts.cols)))
     if not os.path.isdir(opts.outdir):
-        os.mkdir(opts.outdir)
+        os.makedirs(opts.outdir)
 
     for page in pages:
         page.items = [i for i in items_chunked[page.idx-1] if i]
