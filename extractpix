@@ -90,6 +90,7 @@ my $mountpoint = "/run/media/karlp/EOS_DIGITAL";    # where your camera shows up
 my $enable_convert_movie = 0;
 my $config_rawPattern = '.cr2$|.crw$|.CR2$|.CRW$';
 my @config_raw_suffixes = qw(.cr2 .crw .CR2 .CRW);
+my $config_moviePattern = '.mov$|.MOV$|.mp4$|.MP4$';
 
 
 my $verbose = 1;
@@ -416,8 +417,8 @@ sub adjust_images {
     $sfile =~ s@^.*/@@;
     my $n = $#nfiles+1;
     #my $extract_p = ($sfile =~ m/\.crw$/i);
-    my $convert_movie = ($sfile =~ m/.mov$/i) && $enable_convert_movie;
-    my $israw = ($sfile =~ m/\.crw$/i) || ($sfile =~ m/\.cr2$/i);
+    my $convert_movie = ($sfile =~ m/$config_moviePattern/i) && $enable_convert_movie;
+    my $israw = $sfile =~ m/$config_rawPattern/;
     my $extract_p = $israw && not isJpegPlusRaw($f1, @nfiles);
 
 
@@ -447,6 +448,7 @@ sub adjust_images {
 
     if ($convert_movie) {
         $f2 = $f1;
+	# FIXME - won't handle mp4s here!
         $f2 =~s/\.mov$/_preview.ogv/i;
         safe_system("/home/karl/bin/make_ogv.sh $f1 $f2");
         # add meta data to the movie?
@@ -596,7 +598,7 @@ sub duplicate_files {
   my $start2 = time;
   my $i = 1;
   foreach my $f1 (@nfiles) {
-    $f1 =~ s/\.crw$/_JFR.jpg/i;
+    $f1 =~ s/$config_rawPattern/_JFR.jpg/i;
     my $f2 = $f1;
     $f2 =~ s@/$destdir/@/$clonedir/@;
     error ("unable to map $destdir to $clonedir in $f1") if ($f1 eq $f2);
@@ -621,7 +623,7 @@ sub duplicate_files {
 
 my @foundfiles; ## Shouldn't have to be a global :(
 sub wanted {
-    return unless ($_ =~ m/\.jpg$|\.cr[w2]$|\.mov$/i);
+    return unless ($_ =~ m/\.jpg$|$config_rawPattern|$config_moviePattern/i);
     push @foundfiles, $File::Find::name;
 }
 
