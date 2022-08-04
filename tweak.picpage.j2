@@ -65,56 +65,64 @@
 </div>
 {# old gallery had a "pano! scroll sideways!" here?#}
 <div style="clear:both;"></div>
+  <div class="shooting_details">
+
   {% if item.is_photo() %}
 <h3>Shooting Details</h3>
+    <ul>
   {% if item.is_art() %}
-  <p>Note: this photo has been edited for artistic effect, exif details are from original source
+  <li>Note: this photo has been edited for artistic effect, exif details are from original source
   {% endif %}
   {% if item.is_stack() %}
-  <p>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
+  <li>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
   {% endif %}
-  <p>Date Taken: {{item.meta_create_date()}}
+  <li>Date Taken: {{item.meta_create_date()}}
   {% if item.metadata["EXIF:LensModel"] %} {# this is for my Canon dslr #}
-  <p>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
-  <p>Lens: {{item.metadata["EXIF:LensModel"]}} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
-  <p>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
-  <p>ISO: {{item.metadata["EXIF:ISO"]}}
+  <li>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
+  <li>Lens: {{item.metadata["EXIF:LensModel"]}} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
+  <li>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
+  <li>ISO: {{item.metadata["EXIF:ISO"]}}
   {% else %} {# no lens, assume it's a phone #}
-  <p>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
-  <p>Lens (Phone Camera): {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
-  <p>Phone: {{item.metadata["EXIF:Make"]}} {{item.metadata["EXIF:Model"]}}
-  <p>ISO: {{item.metadata["EXIF:ISO"]}}
+  <li>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
+  <li>Lens (Phone Camera): {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
+  <li>Phone: {{item.metadata["EXIF:Make"]}} {{item.metadata["EXIF:Model"]}}
+  <li>ISO: {{item.metadata["EXIF:ISO"]}}
 
   {# should range check where in the world this is before trying to set links... #}
   {% if item.metadata["Composite:GPSPosition"] %}
   {# this is _super_ inefficient, it calls it like 4 times..., byt yolo, it's offline... #}
       {% if item.geo_iceland() %}
-      <p>Location: <a href="https://map.is/base/@{{item.geo_iceland()[0]}},{{item.geo_iceland()[1]}},z8,0">
+      <li>Location: <a href="https://map.is/base/@{{item.geo_iceland()[0]}},{{item.geo_iceland()[1]}},z8,0">
         {{"%.4f"|format(item.metadata["Composite:GPSLatitude"])}}°, {{"%.4f"|format(item.metadata["Composite:GPSLongitude"])}}°</a>
         (As recorded, may not always very accurate...)
       {% else %} {# rest of the world for now... #}
-      <p>Location: <a href="https://google.com/maps/@{{item.metadata["Composite:GPSLatitude"]}},{{item.metadata["Composite:GPSLongitude"]}},14z">
+      <li>Location: <a href="https://google.com/maps/@{{item.metadata["Composite:GPSLatitude"]}},{{item.metadata["Composite:GPSLongitude"]}},14z">
         {{"%.4f"|format(item.metadata["Composite:GPSLatitude"])}}°, {{"%.4f"|format(item.metadata["Composite:GPSLongitude"])}}°</a>
         (As recorded, may not always very accurate...)
       {% endif %}
   {% else %}
-  <p>Location: unknown/removed
-  {% endif %}
-
+  <li>Location: unknown/removed
+  {% endif %} {# end of has gps position... #}
+</ul>
   {% endif %} {# end of "shooting details" #}
-  {% endif %}
+  {% endif %} {# end of "is photo" #}
+
   {% if item.is_pano() %}
 <h3>Shooting Details</h3>
-  <p>Date Taken: {{item.meta_create_date()}}
-  <p>This is stitched panorama of multiple images, cut and cropped and possibly edited for effect. No shooting details would be relevant here.
+    <ul>
+  <li>Date Taken: {{item.meta_create_date()}}
+  <li>This is stitched panorama of multiple images, cut and cropped and possibly edited for effect. No shooting details would be relevant here.
+  </ul>
   {% endif %}
   {% if item.is_video() %}
 <h3>File Details</h3>
-  <p>Date Taken: {{item.meta_create_date()}}
-  <p>Direct Download <a href="{{item.dl_webm}}">WebM</a> or <a href="{{item.dl_mp4}}">MP4</a>
+<ul>
+  <li>Date Taken: {{item.meta_create_date()}}
+  <li>Direct Download <a href="{{item.dl_webm}}">WebM</a> or <a href="{{item.dl_mp4}}">MP4</a>
+  </ul>
 
   {% endif %}
-
+</div>
 
 
   </p>
