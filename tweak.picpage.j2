@@ -34,12 +34,12 @@
 
 {% if item.is_photo() or item.is_pano() %}
   <div class="embed-container">
-    <img src="{{item.ofn_from_page}}" alt="{{item.title()}}"/>
+    <img src="{{item.ofn_from_page}}" alt="{{item.title()}}" id="ktarget"/>
   </div>
 <div>
 {% endif %}
 {% if item.is_video() %}
-<video width="1280" height="720" controls="controls" preload>
+<video width="1280" height="720" controls="controls" preload id="ktarget">
     <source src="{{item.dl_webm}}" type="video/webm;codecs="vp9"" />
     <source src="{{item.dl_mp4}}" type="video/mp4" />
     <p>
@@ -145,6 +145,47 @@ keyboardPagination( '.pagination',
     prev: '.pagination-prev',
     next: '.pagination-next',
     up: '.pagination-up'
+});
+</script>
+<script type="text/javascript">
+// karl's ghetto tastic swipe handling, inline babyyyy!
+var lastx;
+var lasty;
+
+function on_pdown(ev) {
+    lastx = ev.clientX;
+    lasty = ev.clientY;
+    let el = document.getElementById("ktarget");
+    el.setPointerCapture(ev.pointerId);
+}
+
+function on_pup(ev) {
+    let el = document.getElementById("ktarget");
+    el.releasePointerCapture(ev.pointerId);
+    dx = lastx - ev.clientX;
+    dy = lasty - ev.clientY;
+    if (Math.abs(dx) > Math.abs(dy)) {
+        var nel;
+        if (dx > 0) {
+            nel = document.getElementById("nextfile");
+        } else {
+            nel = document.getElementById("prevfile");
+        }
+        if (nel) {
+            nel.click();
+        }
+    }
+}
+
+function init() {
+    const el = document.getElementById("ktarget");
+    el.onpointerdown = on_pdown;
+    el.onpointerup = on_pup;
+    el.onpointercancel = on_pup;
+}
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    init();
 });
 </script>
 
