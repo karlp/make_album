@@ -23,6 +23,7 @@ import subprocess
 import jinja2
 from PIL import Image, ImageFont, ImageDraw
 import exiftool # The only thing we trust.
+import pyproj
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -160,6 +161,19 @@ class Item:
         d = self.metadata.get("EXIF:DateTimeOriginal", d)
         return d
 
+    def geo_iceland(self):
+        """
+        Returns a tuple in coordinates suitable for iceland map services, if the item
+        both _has_ geo data, and it's in iceland. otherwise, None
+        """
+        dy = self.metadata.get("Composite:GPSLongitude", None)
+        dx = self.metadata.get("Composite:GPSLatitude", None)
+        if dx and dy:
+            if dy > -30.87 and dy < -5.55 and dx > 59.96 and dx < 69.59:
+                t = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3057")
+                ox, oy = t.transform(dx, dy)
+                return ox, oy
+        return None
 
     def mk_thumb(self):
         """
