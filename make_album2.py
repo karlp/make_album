@@ -27,6 +27,7 @@ import pyproj
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
+logging.getLogger("PIL").setLevel(logging.INFO)
 
 class Item:
     """Represents an item that gets an individual page"""
