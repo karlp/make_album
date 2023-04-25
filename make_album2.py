@@ -143,7 +143,8 @@ class Item:
             title = self.metadata.get("EXIF:UserComment", title)
             title = self.metadata.get("IPTC:Caption-Abstract", title)
             title = self.metadata.get("XMP:Title", title)
-        return title
+        # Potentially not what the doctor ordered, but chomp leading/trailing whitespace
+        return title.strip()
 
 
     def importance(self):
