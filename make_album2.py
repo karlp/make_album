@@ -63,14 +63,6 @@ class Item:
                     if fn == self.bn:
                         self.meta_title = descr
 
-        # This bullshit is because pyexiftool doesn't allow control of conversions, and returns shit like 0.008 seconds...
-        shutter_raw = self.metadata.get("EXIF:ExposureTime", None)
-        if shutter_raw:
-            if shutter_raw < 0.5:
-                val = 1/shutter_raw
-                self.shutter_speed = f"1/{val:.0f} sec"
-            else:
-                self.shutter_speed = f"{shutter_raw} sec"
 
         self.title_share = self.title # facebook opengraph thingy
 
@@ -109,6 +101,37 @@ class Item:
     def is_photo(self):
         return not self.is_video() and not self.is_pano()
 
+    def get_lens(self) -> str:
+        el = self.metadata.get("EXIF:LensModel")
+        if el:
+            return el
+        # Otherwise, might be zoom, with max/min, might be fixed, might be a phone...
+        # we would _like_ the print converted Composite:Lens, but we can't get that back again...
+        # so we have to do it ourselves!? how fucking gross is this...
+        # priority list of tags to pull from...
+        mmin = self.metadata.get("MakerNotes:MinFocalLength")
+        mmax = self.metadata.get("MakerNotes:MaxFocalLength")
+        if mmin and mmax:
+            if mmin == mmax:
+                return "Fixed"
+            return f"{mmin}mm - {mmax}mm Zoom"
+
+        return self.metadata.get("Composite:Lens",
+                                 "Unknown")
+
+    def get_shutter_speed(self) -> str:
+        # We _normally_ want the machine non-cnverted times, except when we don't
+        # as far as I can tell, we can't have the same tag bothconverted and not-converted in the same instance.
+        # boooo
+        shutter_raw = float(self.metadata.get("Composite:ShutterSpeed", -1))
+        if shutter_raw > 0:
+            if shutter_raw < 0.5:
+                val = 1/shutter_raw
+                return f"1/{val:.0f} sec"
+            else:
+                return f"{shutter_raw} sec"
+        #return self.metadata.get("Composite:ShutterSpeed")
+
     def title(self):
         title = self.bn
         if self.is_video():
@@ -130,11 +153,14 @@ class Item:
             if self.title():
                 return self.opts.filter_imp
         else:
+            # Legacy binary flagging, used on some old images.
+            if self.metadata.get("IPTC:SpecialInstructions", "") == "Publish":
+                imp = 3
             # Most important at the bottom...
             imp = self.metadata.get("IPTC:Urgency", imp)
             imp = self.metadata.get("XMP:Urgency", imp)
             imp = self.metadata.get("XMP:Rating", imp)
-            return imp
+            return int(imp)
         return 0
 
     def is_included(self):

@@ -68,25 +68,25 @@
   <div class="shooting_details">
 
   {% if item.is_photo() %}
-<h3>Shooting Details</h3>
+    <h3>Shooting Details</h3>
     <ul>
-  {% if item.is_art() %}
-  <li>Note: this photo has been edited for artistic effect, exif details are from original source
-  {% endif %}
-  {% if item.is_stack() %}
-  <li>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
-  {% endif %}
-  <li>Date Taken: {{item.meta_create_date()}}
-  {% if item.metadata["EXIF:LensModel"] %} {# this is for my Canon dslr #}
-  <li>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
-  <li>Lens: {{item.metadata["EXIF:LensModel"]}} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
-  <li>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
-  <li>ISO: {{item.metadata["EXIF:ISO"]}}
-  {% else %} {# no lens, assume it's a phone #}
-  <li>Exposure: {{item.shutter_speed}} &amp; f{{item.metadata["EXIF:FNumber"]}}
-  <li>Lens (Phone Camera): {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
-  <li>Phone: {{item.metadata["EXIF:Make"]}} {{item.metadata["EXIF:Model"]}}
-  <li>ISO: {{item.metadata["EXIF:ISO"]}}
+    {% if item.is_art() %}
+        <li>Note: this photo has been edited for artistic effect, exif details are from original source
+    {% endif %}
+    {% if item.is_stack() %}
+        <li>Note: this photo is a <a href="/pics2/stack_details.html">stack of two images</a>, the exif should not be considered reliable.
+    {% endif %}
+    <li>Date Taken: {{item.meta_create_date()}}
+        {% if item.get_shutter_speed() %}
+    <li>Exposure: {{item.get_shutter_speed()}} &amp; f{{"{:.0f}".format(item.metadata["Composite:Aperture"])}}
+    <li>Lens: {{item.get_lens() }} @ {{item.metadata["EXIF:FocalLength"]}}mm (35mm Equiv: ~{{ "{:.0f}".format(item.metadata["Composite:FocalLength35efl"])}}mm)
+        {% if item.metadata.get("MakerNotes:OwnerName", None) %}
+        <li>Camera: {{item.metadata["EXIF:Model"]}} (Owner: {{item.metadata["MakerNotes:OwnerName"]}})
+        {% else %}
+        <li>Phone: {{item.metadata["EXIF:Make"]}} {{item.metadata["EXIF:Model"]}}
+        {% endif %}
+    <li>ISO: {{item.metadata["EXIF:ISO"]}}
+
 
   {# should range check where in the world this is before trying to set links... #}
   {% if item.metadata["Composite:GPSPosition"] %}
@@ -94,17 +94,20 @@
       {% if item.geo_iceland() %}
       <li>Location: <a href="https://map.is/base/@{{item.geo_iceland()[0]}},{{item.geo_iceland()[1]}},z8,0">
         {{"%.4f"|format(item.metadata["Composite:GPSLatitude"])}}°, {{"%.4f"|format(item.metadata["Composite:GPSLongitude"])}}°</a>
-        (As recorded, may not always very accurate...)
       {% else %} {# rest of the world for now... #}
-      <li>Location: <a href="https://google.com/maps/@{{item.metadata["Composite:GPSLatitude"]}},{{item.metadata["Composite:GPSLongitude"]}},14z">
+      <li>Location: <a href="https://google.com/maps/@?api=1&map_action=map&center={{item.metadata["Composite:GPSLatitude"]}},{{item.metadata["Composite:GPSLongitude"]}}&zoom=14&basemap=satellite">
         {{"%.4f"|format(item.metadata["Composite:GPSLatitude"])}}°, {{"%.4f"|format(item.metadata["Composite:GPSLongitude"])}}°</a>
-        (As recorded, may not always very accurate...)
       {% endif %}
+      (As recorded, may not always very accurate...)
   {% else %}
   <li>Location: unknown/removed
   {% endif %} {# end of has gps position... #}
+
+        {% else %}
+        {# jpg, or "photo looking" but no basic exif, just ignore it #}
+        {% endif %}
+
 </ul>
-  {% endif %} {# end of "shooting details" #}
   {% endif %} {# end of "is photo" #}
 
   {% if item.is_pano() %}
