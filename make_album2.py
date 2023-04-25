@@ -51,7 +51,8 @@ class Item:
         self.page_fn = f"{opts.outdir}/{opts.picpage_prefix}{self.base}.html"
 
         # Load any available metadata from the file itself.
-        self.metadata = exiftool.get_metadata(self.srcfn)
+        # pyexiftool 0.5+ returns a list, even if we only asked for one file.
+        self.metadata = exiftool.get_metadata(self.srcfn)[0]
         # Also, look for any metadata in sidecar files...
         self.meta_title = None
         description_fn = f"{os.path.dirname(os.path.abspath(self.srcfn))}/descript.ion"
@@ -299,6 +300,10 @@ def update_metadata(opts):
         opts.title = cfg.get("title", opts.title_default)
     if not opts.outdir:
         opts.outdir = cfg.get("outdir", opts.outdir_default)
+    if not opts.iptc_utf8:
+        z = cfg.get("iptc_utf8")
+        if z and z.lower()[0] in ["y", "t", "1"]:
+            opts.iptc_utf8 = True
     return opts
 
 def searchable_file(string):
@@ -335,6 +340,9 @@ def get_args():
     ap.add_argument("--outdir", help="Output directory, supersedes gallery metadata")
     ap.add_argument("--outdir_default", help="Output directory fallback", default="my-gallery.generated")
     ap.add_argument("--filter_imp", type=int, default=2, help="Filter out items with 'importance' less than this value.")
+
+    ap.add_argument("--iptc_utf8", default=False, action="store_true",
+                    help="If your IPTC captions are (incorrectly) in utf8, instead of latin1, this can help convert them on load, assumed to be fixed for entire gallery")
 
     ap.add_argument("--image_dimension", default=1200, help="Maximum dimension of resized output images")
     ap.add_argument("--image_format", default="jpg", choices=["jpg"], help="format of resized output images (for static images only)")
@@ -379,7 +387,14 @@ def do_main(opts):
     # if we have had shell expansion, globbing again does no harm.
     globbed_inputs = [glob.glob(f) for f in opts.infiles]
 
-    with exiftool.ExifTool() as et:
+    # TODO - it might be nice to have exiftool read everything, then just work from that,
+    # instead of running it on each file one by one?
+    # In the meantime, we use check_execute=False as we are often passing "*" as the file list
+    # and we don't care about failures on files that don't have all fields!
+    cargs = ["-G", "-n"] # Plain exiftool defaults
+    if opts.iptc_utf8:
+        cargs.extend("-charset iptc=utf8".split())
+    with exiftool.ExifToolHelper(common_args=cargs, check_execute=False) as et:
         items = [Item(f, opts, et) for f in set().union(*globbed_inputs)]
 
     items = handle_sorting(items, opts)
