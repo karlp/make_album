@@ -67,7 +67,7 @@ def get_pic_date(fn):
     Just use regexps.  We have old documents with no useful
     structure, so just look for the "Shooting Details" header, and then
     look for the Date Taken after that.
-    returns a timestamp
+    returns a datetime object
     """
     #print("k, looking at pic page:", fn)
     with open(fn, "r") as fp:
@@ -88,14 +88,14 @@ def get_pic_date(fn):
                 # it's almost definitely using : instead of -
                 try:
                     d = datetime.datetime.fromisoformat(dt)
-                    return d.timestamp()
+                    return d
                 except ValueError:
                     pass
                 # ok, try and mangle it a bit...
                 dt = dt.replace(":", "-", 2)
                 try:
                     d = datetime.datetime.fromisoformat(dt)
-                    return d.timestamp()
+                    return d
                 except ValueError:
                     pass
                 # Last try, maybe it just has a date?  (python is way less "complete"
@@ -159,6 +159,7 @@ class RGallery:
         self.title: str = title
         self.mtime = mtime # This is just mod time of the page1 file!
         self.pictime = None
+        self.create_date = datetime.datetime.fromtimestamp(mtime)
 
     def enrich(self, opts):
         """
@@ -174,8 +175,7 @@ class RGallery:
         page_links = [l for l in links if l.get("href").startswith("page_")]
         #print(f"Ok, found page links: {page_links}")
         if len(links) == 0:
-            # TODO - is there any better heuristic than mtime here?
-            self.pictime = self.mtime
+            # Return, just use defaults
             return self
 
         # Start at the back page, last image, looking for a valid date.
@@ -203,13 +203,13 @@ class RGallery:
 
         if pic_date:
             self.pictime = pic_date
+            self.create_date = self.pictime
         else:
-            logging.warning("No date found for album at all falling back to mtime %s", self)
-            self.pictime = self.mtime
+            logging.warning("No date found for album at all, falling back to default %s", self)
         return self
 
     def __repr__(self):
-        return f"Gallery<p1={self.page1}, title={self.title}, mtime={self.mtime}>"
+        return f"Gallery<p1={self.page1}, title={self.title}, create_date={self.create_date}>"
 
 
 def get_args():
@@ -228,6 +228,7 @@ def get_args():
                     default="https://www.tweak.au/pics2")
 
     ap.add_argument("--force", action="store_true", help="Force re-generation of output file")
+    ap.add_argument("--recent_days", type=int, help="Days to consider a gallery 'recent'", default=30)
 
     opts = ap.parse_args()
 
@@ -284,7 +285,7 @@ def organize2(opts, albums: typing.List[RGallery], sortorder: AlbumSortOrder):
 
     if sortorder in [AlbumSortOrder.PIC_ASCENDING, AlbumSortOrder.PIC_DESCENDING]:
         [a.enrich(opts) for a in albums]
-        albums.sort(key=lambda x: x.pictime, reverse=sortorder==AlbumSortOrder.PIC_DESCENDING)
+        albums.sort(key=lambda x: x.create_date, reverse=sortorder==AlbumSortOrder.PIC_DESCENDING)
         return albums
 
     # ok, need to go and do work to find the "last picture in a gallery"
@@ -341,7 +342,9 @@ def do_main(opts):
     hgalleries = organize2(opts, galleries, sortorder)
 
 
-    recent = [] # need to pick this off.... when? it's the same list? or does organize return this?
+    # old version used a specific date length for "recent" based on generation date.
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=opts.recent_days)
+    recent = [g for g in hgalleries if g.create_date > cutoff]
 
 
 

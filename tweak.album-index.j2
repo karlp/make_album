@@ -4,26 +4,9 @@
 <link rel="alternate" href="feed.rss" type="application/rss+xml" title="RSS feed for this page"/>
 <title>{{title}}</title>
 
-<script src="jquery-1.4.2.min.js" type="text/javascript"></script>
-<script>
-$(document).ready(function(){
-    // Your code here
-    $(".createdate").each(function (i) {
-        d = new Date($(this).text());
-        now = new Date();
-        daysAgo = Math.floor((now - d) / (1000 * 60 * 60 * 24));
-        if (daysAgo == 0) {
-            $(this).text("today");
-        } else {
-            $(this).text(daysAgo + " days ago");
-        } 
-    });
- });
-</script>
 <link rel="StyleSheet" href="/tweak.css" type="text/css"/>
 </head>
 
-<li>
 <div class="navigation">
     <a href="/">Home</a>
 </div>
@@ -42,7 +25,7 @@ $(document).ready(function(){
     {% if recent|length > 1 %}
     <ul>
         {% for g in recent %}
-            <li><a href="{{g.page1}}">{{g.title}}</a> gallery created <span class='createdate'>{{g.createdate}}</span></li>
+            <li><a href="{{g.page1}}">{{g.title}}</a> gallery created <span class='createdate'>{{g.create_date}}</span></li>
         {% endfor  %}
     </ul>
     {% endif %}
@@ -76,5 +59,20 @@ $(document).ready(function(){
     <p/>
     <a href="/pics">Older galleries</a>
 </div>
+<script>
+(function() {
+    var recent = document.getElementsByClassName("createdate");
+    var now = new Date();
+    for (let e of recent) {
+        d = new Date(e.textContent);
+        daysAgo = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+        if (daysAgo == 0) {
+            e.textContent = "today";
+        } else {
+            e.textContent = daysAgo + " days ago";
+        }
+    }
+})();
+</script>
 </body>
 </html>
