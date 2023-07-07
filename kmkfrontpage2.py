@@ -33,6 +33,7 @@ TODO - ... finish it?
 """
 import argparse
 import dataclasses
+import datetime
 import enum
 import itertools
 import logging
@@ -44,18 +45,11 @@ import typing
 import unittest
 
 import jinja2
+from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-
-@dataclasses.dataclass
-class TGallery:
-    title: str
-    page1: str
-    year: int
-    month: int
-    month_name: str
 
 class AlbumSortOrder(enum.Enum):
     # mod time of gallery index
@@ -68,6 +62,92 @@ class AlbumSortOrder(enum.Enum):
     PIC_ASCENDING = enum.auto()
     PIC_DESCENDING = enum.auto()
 
+def get_pic_date(fn):
+    """
+    Just use regexps.  We have old documents with no useful
+    structure, so just look for the "Shooting Details" header, and then
+    look for the Date Taken after that.
+    returns a timestamp
+    """
+    #print("k, looking at pic page:", fn)
+    with open(fn, "r") as fp:
+        lines = fp.readlines()
+
+    # skip ahead to "shooting details" line...
+    found_d = False
+    m = re.compile(r"date.*?: (.*\d)", re.IGNORECASE)
+    for line in lines:
+        if "details" in line.casefold():
+            found_d = True
+        if found_d:
+            # Only look for date field after the details line.
+            z = m.search(line)
+            if z:
+                dt = z.group(1)
+                # now, it _might_ be an iso date, but it's probably not,
+                # it's almost definitely using : instead of -
+                try:
+                    d = datetime.datetime.fromisoformat(dt)
+                    return d.timestamp()
+                except ValueError:
+                    pass
+                # ok, try and mangle it a bit...
+                dt = dt.replace(":", "-", 2)
+                try:
+                    d = datetime.datetime.fromisoformat(dt)
+                    return d.timestamp()
+                except ValueError:
+                    pass
+                # Last try, maybe it just has a date?  (python is way less "complete"
+                # Than perl's "str2time" which just understands everything...
+
+                logging.warning("Couldn't find a parseable date in  date field?! %s -> %s", fn, dt)
+
+
+def get_pic_date_blob_regexp(fn):
+    """
+    Just use regexps.  We have old documents with no useful
+    structure, so just look for the "Shooting Details" header, and then
+    look for the Date Taken after that.
+    """
+    with open(fn, "r") as fp:
+        blob = fp.read()
+
+    # insanely search for everything...
+    m = re.compile(r"<h3>.*details.*date.*:(.*)", re.IGNORECASE)
+    x = m.search(blob)
+    #print(blob)
+    if x:
+        print("ok, found a match: ", x)
+    if not x:
+        print("Failed to find anythign in ", fn)
+    #print("um, ok, ", x)
+
+
+
+def get_pic_date_soup_incomplete(fn):
+    """
+    Given a full path to individual pic page, attempt to get the date from it.
+    :param fn:
+    :return: None if not reliably detected, or a unix timestamp otherwise.? (or a datetime instance?)
+    """
+    logging.debug("checking %s for a plausible image date", fn)
+    with open(fn, "r") as fp:
+        soup = BeautifulSoup(fp, "html.parser")
+
+    hh = soup.find_all("h3")
+    # Only one h3 with "Details" in the text.
+    details = [h for h in hh if "Details" in h.contents[0]][0]
+    print("contenst", [h.contents[0] for h in hh])
+    print("detials: ", details)
+    # now look at details.next... for the raw text...
+    for x in details.next_elements:
+        print("processing next ele", x)
+        #if "Date" in x.contents:
+        #    print("plausible date: ", x)
+
+
+
 class RGallery:
     def __init__(self, page1, title=None, mtime=0):
         """
@@ -78,15 +158,58 @@ class RGallery:
         self.href = self.page1.parent # without the page1.html bit, makes nicer urls...
         self.title: str = title
         self.mtime = mtime # This is just mod time of the page1 file!
-        #self.month = 1
-        #self.year = 1999 # should we get from the path instead?
-        #self.month_name = "lol"
-        #self.path_elems = page1.parts[:-1]
-        #self.children = []
+        self.pictime = None
+
+    def enrich(self, opts):
+        """
+        Enriches metadata, specifically, looks up the "pic date"
+        by looking into the files of an album and finding the last picture and
+        getting it's date to use.
+        """
+        fn = pathlib.Path(opts.where).joinpath(self.page1)
+        with open(fn, "r") as fp:
+            soup = BeautifulSoup(fp, "html.parser")
+        # look for all links on the page...
+        links = soup.find_all('a')
+        page_links = [l for l in links if l.get("href").startswith("page_")]
+        #print(f"Ok, found page links: {page_links}")
+        if len(links) == 0:
+            # TODO - is there any better heuristic than mtime here?
+            self.pictime = self.mtime
+            return self
+
+        # Start at the back page, last image, looking for a valid date.
+        pic_date = None
+        pages = reversed(page_links)
+        while pic_date is None:
+            page = next(pages, None)
+            if page:
+                xfile = self.page1.parent.joinpath(page.get("href"))
+                logging.debug("Checking page: %s", xfile)
+                with open(pathlib.Path(opts.where).joinpath(xfile), "rb") as fp:
+                    soup = BeautifulSoup(fp, "html.parser")
+            # otherwise, back to the page we're already on please!
+
+            # now need picpage links, or at least agood way of determining them...
+            # we want to get <a> that is inside <img>? can we do that easily?
+            img_links = [i.parent.get("href") for i in soup.css.select("a > img")]
+            for e in reversed(img_links):
+                pic_date = get_pic_date(pathlib.Path(opts.where).joinpath(self.page1).parent.joinpath(e))
+                if pic_date:
+                    break
+            if not page:
+                # we tried every single followup page, and every single image on the front page
+                break
+
+        if pic_date:
+            self.pictime = pic_date
+        else:
+            logging.warning("No date found for album at all falling back to mtime %s", self)
+            self.pictime = self.mtime
+        return self
 
     def __repr__(self):
         return f"Gallery<p1={self.page1}, title={self.title}, mtime={self.mtime}>"
-
 
 
 def get_args():
@@ -138,7 +261,7 @@ def search_galleries(opts):
 
     return galleries
 
-def organize2(albums: typing.List[RGallery], sortorder: AlbumSortOrder):
+def organize2(opts, albums: typing.List[RGallery], sortorder: AlbumSortOrder):
     """
     Don't try and re-invent data structures, you failed at that first time on this...
     :param albums: list of album blobs, with easy metadata already collected.
@@ -159,8 +282,10 @@ def organize2(albums: typing.List[RGallery], sortorder: AlbumSortOrder):
         albums.sort(key=lambda x: x.mtime, reverse=True)
         return albums
 
-    if sortorder not in [AlbumSortOrder.PIC_ASCENDING, AlbumSortOrder.PIC_DESCENDING]:
-        raise ValueError("Unsupported sort order", sortorder)
+    if sortorder in [AlbumSortOrder.PIC_ASCENDING, AlbumSortOrder.PIC_DESCENDING]:
+        [a.enrich(opts) for a in albums]
+        albums.sort(key=lambda x: x.pictime, reverse=sortorder==AlbumSortOrder.PIC_DESCENDING)
+        return albums
 
     # ok, need to go and do work to find the "last picture in a gallery"
     # yes, this is complicated and messy, but it's actually important, you just have to do it.
@@ -209,11 +334,11 @@ def do_main(opts):
             return
 
     galleries = search_galleries(opts)
-    print(" galls are ...", galleries)
+    #print(" galls are ...", galleries)
     # ok, galleries is a flat list with metadata.  Now, to create a heirarchy based on our chosen sorting...
     #sortorder = AlbumSortOrder.MTIME_ASCENDING
-    sortorder = AlbumSortOrder.ALPHA_ASCENDING
-    hgalleries = organize2(galleries, sortorder)
+    sortorder = AlbumSortOrder.PIC_DESCENDING
+    hgalleries = organize2(opts, galleries, sortorder)
 
 
     recent = [] # need to pick this off.... when? it's the same list? or does organize return this?
