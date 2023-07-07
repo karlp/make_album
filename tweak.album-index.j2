@@ -32,27 +32,25 @@
 
 <hr/>
 
-    {% macro input(here, prev) %}
-        {% for x in helper_in(here, prev) %}
-            </li>
-            </ul>
-        {% endfor %}
-        {% for x in helper_out(here, prev) %}
-        <li>{{x}}
-            <ul>
-        {% endfor %}
-
-        <li>
-            <a href="{{ here.href|e }}"> {# only make links to pages themselves #}
-                {{ here.title }}
-            </a>
-        </li>
-    {% endmacro %}
-
     <ul class="gallerylist">
         {% set depth = 0 %}
-        {%- for item in galleries %}
-            {{ input(item, loop.previtem) }}
+        {%- for here in galleries %}
+            {% for x in helper_in(here, loop.previtem) %}
+                </li>
+                </ul>
+            {% endfor %}
+            {% for x in helper_out(here, loop.previtem) %}
+                <li>{{x}}
+                <ul>
+            {% endfor %}
+                <li>
+                    <a href="{{ here.href|e }}"> {# only make links to pages themselves #}
+                        {{ here.title }}
+                    </a>
+                    {% if here in recent %}
+                    <span class="newgallery">NEW</span>
+                    {% endif %}
+                </li>
         {% endfor %}
     </ul>
 

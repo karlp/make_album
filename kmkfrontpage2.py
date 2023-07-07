@@ -47,7 +47,7 @@ import unittest
 import jinja2
 from bs4 import BeautifulSoup
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
