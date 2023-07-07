@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rss version="2.0"
+ xmlns:blogChannel="http://backend.userland.com/blogChannelModule"
+>
+
+<channel>
+<title>Karl's Photos of the World</title>
+<link>{{base}}</link>
+<description>Daily life, travel, work and play, some pictures, some photos - galleries that have been updated in the last
+30 days (since feed publication date)</description>
+<pubDate>{{now}}</pubDate>
+
+{% for gal in recent %}
+    <item>
+        <title>{{gal.title}}</title>
+        <link>{{base}}/{{gal.href}}?src=rss</link>
+        <description>you'll have to go to the gallery....</description>
+        <guid isPermaLink="true">{{base}}/{{gal.href}}?src=rss</guid>
+    </item>
+{% endfor %}
+</channel>
+</rss>

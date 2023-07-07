@@ -222,6 +222,7 @@ def get_args():
     ap.add_argument("--outfile", help="Output file name", default="index.html")
     # TODO probably needs more work on relative pathing?
 
+    ap.add_argument('--rss_template', help="Jinja template for index page", default="feed.rss.j2")
     ap.add_argument("--rss_outfile", help="Output filename for RSS.xml", default="feed.rss")
     ap.add_argument("--rss_baseurl",
                     help="Base url where this page will live, used for generating correct URIs",
@@ -346,8 +347,6 @@ def do_main(opts):
     cutoff = datetime.datetime.now() - datetime.timedelta(days=opts.recent_days)
     recent = [g for g in hgalleries if g.create_date > cutoff]
 
-
-
     # Apparently jinja doesn't like absolute paths?
     env = jinja2.Environment(loader=jinja2.FileSystemLoader([".", os.path.dirname(__file__), "/home/karlp/src/make_album"]),
                              autoescape=jinja2.select_autoescape(['html', 'xml']),
@@ -355,9 +354,15 @@ def do_main(opts):
     env.globals = dict(opts=opts, title=opts.title, helper_in=helper_in, helper_out=helper_out)
 
     tpl = env.get_template(opts.template_index)
-
     with open(f"{opts.outfile}", "wb") as f:
         f.write(tpl.render(galleries=hgalleries, recent=recent).encode("utf8"))
+
+    tpl = env.get_template(opts.rss_template)
+    with open(f"{opts.rss_outfile}", "wb") as f:
+        f.write(tpl.render(recent=recent,
+                           base=opts.rss_baseurl,
+                           now=datetime.datetime.now(),
+                           ).encode("utf8"))
 
 
 class TestHelpers(unittest.TestCase):
